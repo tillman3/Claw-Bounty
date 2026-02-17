@@ -9,7 +9,16 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 /// @dev State transitions: Open → Claimed → Submitted → InReview → Completed | Disputed → Resolved | Cancelled
 contract TaskRegistry is Ownable2Step, Pausable {
     // --- Enums ---
-    enum TaskState { Open, Claimed, Submitted, InReview, Completed, Disputed, Resolved, Cancelled }
+    enum TaskState {
+        Open,
+        Claimed,
+        Submitted,
+        InReview,
+        Completed,
+        Disputed,
+        Resolved,
+        Cancelled
+    }
 
     // --- Structs ---
     struct Task {
@@ -36,7 +45,9 @@ contract TaskRegistry is Ownable2Step, Pausable {
     mapping(address => bool) public authorizedCallers;
 
     // --- Events ---
-    event TaskCreated(uint256 indexed taskId, address indexed poster, uint256 bountyAmount, address paymentToken, uint64 deadline);
+    event TaskCreated(
+        uint256 indexed taskId, address indexed poster, uint256 bountyAmount, address paymentToken, uint64 deadline
+    );
     event TaskClaimed(uint256 indexed taskId, uint256 indexed agentId, address claimedBy);
     event WorkSubmitted(uint256 indexed taskId, bytes32 submissionHash);
     event TaskInReview(uint256 indexed taskId);
@@ -130,7 +141,11 @@ contract TaskRegistry is Ownable2Step, Pausable {
     /// @notice Submit work for a task
     /// @param taskId The task to submit work for
     /// @param submissionHash IPFS hash of the submission
-    function submitWork(uint256 taskId, bytes32 submissionHash) external onlyAuthorized inState(taskId, TaskState.Claimed) {
+    function submitWork(uint256 taskId, bytes32 submissionHash)
+        external
+        onlyAuthorized
+        inState(taskId, TaskState.Claimed)
+    {
         if (submissionHash == bytes32(0)) revert InvalidDescription();
         Task storage task = _tasks[taskId];
         if (block.timestamp >= task.deadline) revert DeadlinePassed();
@@ -219,6 +234,11 @@ contract TaskRegistry is Ownable2Step, Pausable {
     }
 
     // --- Admin ---
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

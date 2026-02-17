@@ -170,6 +170,11 @@ contract AgentRegistry is Ownable2Step, Pausable {
     }
 
     // --- Admin ---
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

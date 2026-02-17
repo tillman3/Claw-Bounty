@@ -84,11 +84,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         if (depositor == address(0)) revert ZeroAddress();
 
         escrows[taskId] = EscrowEntry({
-            depositor: depositor,
-            paymentToken: address(0),
-            amount: msg.value,
-            released: false,
-            refunded: false
+            depositor: depositor, paymentToken: address(0), amount: msg.value, released: false, refunded: false
         });
         totalLockedETH += msg.value;
 
@@ -101,7 +97,9 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param token The ERC20 token address
     /// @param amount The amount to deposit
     function depositToken(uint256 taskId, address depositor, address token, uint256 amount)
-        external onlyAuthorized whenNotPaused
+        external
+        onlyAuthorized
+        whenNotPaused
     {
         if (amount == 0) revert InvalidAmount();
         if (depositor == address(0)) revert ZeroAddress();
@@ -113,11 +111,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         uint256 received = IERC20(token).balanceOf(address(this)) - balBefore;
 
         escrows[taskId] = EscrowEntry({
-            depositor: depositor,
-            paymentToken: token,
-            amount: received,
-            released: false,
-            refunded: false
+            depositor: depositor, paymentToken: token, amount: received, released: false, refunded: false
         });
         totalLockedToken[token] += received;
 
@@ -242,6 +236,11 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // --- Admin ---
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

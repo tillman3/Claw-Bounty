@@ -75,7 +75,10 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param deadline Task deadline
     /// @return taskId The created task ID
     function createTaskETH(bytes32 descriptionHash, uint64 deadline)
-        external payable whenNotPaused returns (uint256 taskId)
+        external
+        payable
+        whenNotPaused
+        returns (uint256 taskId)
     {
         if (msg.value == 0) revert InvalidAmount();
         if (deadline <= block.timestamp) revert InvalidDeadline();
@@ -94,7 +97,9 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param deadline Task deadline
     /// @return taskId The created task ID
     function createTaskToken(bytes32 descriptionHash, address token, uint256 amount, uint64 deadline)
-        external whenNotPaused returns (uint256 taskId)
+        external
+        whenNotPaused
+        returns (uint256 taskId)
     {
         if (token == address(0)) revert ZeroAddress();
         if (amount == 0) revert InvalidAmount();
@@ -232,6 +237,11 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // --- Admin ---
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

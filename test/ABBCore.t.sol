@@ -30,11 +30,7 @@ contract ABBCoreTest is Test {
         agentRegistry = new AgentRegistry(owner);
 
         core = new ABBCore(
-            owner,
-            address(taskRegistry),
-            address(bountyEscrow),
-            address(validatorPool),
-            address(agentRegistry)
+            owner, address(taskRegistry), address(bountyEscrow), address(validatorPool), address(agentRegistry)
         );
 
         // Authorize core on all sub-contracts
@@ -488,7 +484,9 @@ contract EscrowSolvencyInvariant is Test {
         bountyEscrow = new BountyEscrow(owner, feeRecipient, 500);
         validatorPool = new ValidatorPool(owner);
         agentRegistry = new AgentRegistry(owner);
-        core = new ABBCore(owner, address(taskRegistry), address(bountyEscrow), address(validatorPool), address(agentRegistry));
+        core = new ABBCore(
+            owner, address(taskRegistry), address(bountyEscrow), address(validatorPool), address(agentRegistry)
+        );
         taskRegistry.setAuthorizedCaller(address(core), true);
         bountyEscrow.setAuthorizedCaller(address(core), true);
         validatorPool.setAuthorizedCaller(address(core), true);

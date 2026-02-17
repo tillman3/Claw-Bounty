@@ -180,7 +180,10 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param commitDuration Duration for commit phase
     /// @param revealDuration Duration for reveal phase
     function selectPanel(uint256 taskId, uint64 commitDuration, uint64 revealDuration)
-        external onlyAuthorized whenNotPaused returns (address[] memory panel)
+        external
+        onlyAuthorized
+        whenNotPaused
+        returns (address[] memory panel)
     {
         if (activeValidatorCount < PANEL_SIZE) revert NotEnoughValidators();
 
@@ -382,6 +385,11 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // --- Admin ---
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

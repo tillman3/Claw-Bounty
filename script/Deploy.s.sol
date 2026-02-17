@@ -36,11 +36,7 @@ contract Deploy is Script {
 
         // 4. Deploy orchestrator
         ABBCore core = new ABBCore(
-            deployer,
-            address(taskRegistry),
-            address(escrow),
-            address(validatorPool),
-            address(agentRegistry)
+            deployer, address(taskRegistry), address(escrow), address(validatorPool), address(agentRegistry)
         );
         console.log("ABBCore:", address(core));
 
