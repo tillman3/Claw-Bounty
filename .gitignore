@@ -12,4 +12,8 @@ docs/
 
 # Dotenv file
 .env
-.env
+
+# Node
+node_modules/
+api/dist/
+api/.env
