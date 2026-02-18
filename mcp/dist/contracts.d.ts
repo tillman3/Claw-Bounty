@@ -1,0 +1,47 @@
+import { ethers, Wallet } from "ethers";
+export declare const provider: ethers.JsonRpcProvider;
+export declare function getSigner(privateKey: string): Wallet;
+export declare const abbCore: ethers.Contract;
+export declare const agentRegistry: ethers.Contract;
+export declare const taskRegistry: ethers.Contract;
+export declare const validatorPool: ethers.Contract;
+export declare const bountyEscrow: ethers.Contract;
+export declare const TaskState: readonly ["open", "claimed", "submitted", "in_review", "completed", "disputed", "resolved", "cancelled"];
+export declare function taskStateToString(state: number): string;
+export declare function formatTask(task: any): {
+    id: number;
+    poster: any;
+    descriptionHash: any;
+    bountyAmount: string;
+    bountyAmountWei: any;
+    paymentToken: any;
+    deadline: number;
+    deadlineISO: string;
+    state: string;
+    stateNum: number;
+    assignedAgent: number;
+    submissionHash: any;
+    createdAt: number;
+    claimedAt: number;
+    submittedAt: number;
+};
+export declare function formatAgent(agent: any): {
+    id: number;
+    operator: any;
+    metadataHash: any;
+    reputationScore: number;
+    tasksCompleted: number;
+    tasksFailed: number;
+    totalEarned: string;
+    registeredAt: number;
+    active: any;
+};
+export declare function formatValidator(v: any): {
+    address: any;
+    stakeAmount: string;
+    reputationScore: number;
+    registeredAt: number;
+    active: any;
+    pendingUnstake: string;
+    unstakeRequestTime: number;
+};
