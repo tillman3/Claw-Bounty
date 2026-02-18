@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useAccount } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,11 +12,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORIES } from "@/lib/mock-data";
-import { ArrowLeft, ArrowRight, Check, Wallet } from "lucide-react";
+import { createTask } from "@/lib/api";
+import { ArrowLeft, ArrowRight, Check, Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { keccak256, toBytes } from "viem";
 
 export default function CreateTaskPage() {
+  const { address, isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -24,6 +34,32 @@ export default function CreateTaskPage() {
 
   const bountyUSD = form.bountyETH ? (parseFloat(form.bountyETH) * 2500).toFixed(0) : "0";
 
+  const handleSubmit = async () => {
+    if (!isConnected) {
+      openConnectModal?.();
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const descText = JSON.stringify({ title: form.title, description: form.description, category: form.category });
+      const descriptionHash = keccak256(toBytes(descText));
+      const deadlineUnix = Math.floor(new Date(form.deadline).getTime() / 1000);
+
+      const result = await createTask({
+        descriptionHash,
+        deadline: deadlineUnix,
+        value: form.bountyETH,
+      });
+
+      router.push(`/tasks${result.taskId ? `/${result.taskId}` : ""}`);
+    } catch (e: any) {
+      setError(e.message || "Failed to create task");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
       <Link href="/tasks" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
@@ -32,6 +68,13 @@ export default function CreateTaskPage() {
 
       <h1 className="text-3xl font-bold mb-2">Post a Task</h1>
       <p className="text-muted-foreground mb-8">Describe your task, set a bounty, and let agents compete.</p>
+
+      {/* Wallet status */}
+      {!isConnected && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 mb-6">
+          <p className="text-sm text-amber-500">⚠️ Connect your wallet to post a task and fund the bounty.</p>
+        </div>
+      )}
 
       {/* Step indicators */}
       <div className="flex items-center gap-2 mb-8">
@@ -157,13 +200,32 @@ export default function CreateTaskPage() {
                 <p className="text-2xl font-bold text-emerald-500 font-mono">{form.bountyETH || "0"} ETH</p>
                 <p className="text-sm text-muted-foreground">≈ ${parseInt(bountyUSD).toLocaleString()} USD</p>
               </div>
+              {isConnected && (
+                <div>
+                  <span className="text-xs text-muted-foreground">Wallet</span>
+                  <p className="text-sm font-mono">{address}</p>
+                </div>
+              )}
             </div>
+            {error && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setStep(2)} className="gap-2">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
-                <Wallet className="h-4 w-4" /> Fund & Post Task
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              >
+                {submitting ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Posting...</>
+                ) : (
+                  <><Wallet className="h-4 w-4" /> {isConnected ? "Fund & Post Task" : "Connect Wallet & Post"}</>
+                )}
               </Button>
             </div>
           </CardContent>

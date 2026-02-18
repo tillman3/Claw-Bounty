@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { TaskCard } from "@/components/task-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockTasks, CATEGORIES, type TaskStatus } from "@/lib/mock-data";
-import { Search, Plus, LayoutGrid, List } from "lucide-react";
+import { fetchTasks } from "@/lib/api";
+import { CATEGORIES, type TaskStatus, type Task } from "@/lib/mock-data";
+import { Search, Plus, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const statusFilters: { value: TaskStatus | "all"; label: string }[] = [
@@ -21,15 +22,33 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const { tasks: data } = await fetchTasks();
+        setTasks(data);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const filtered = useMemo(() => {
-    return mockTasks.filter((t) => {
+    return tasks.filter((t) => {
       if (statusFilter !== "all" && t.status !== statusFilter) return false;
       if (categoryFilter !== "all" && t.category !== categoryFilter) return false;
       if (search && !t.title.toLowerCase().includes(search.toLowerCase()) && !t.description.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [search, statusFilter, categoryFilter]);
+  }, [tasks, search, statusFilter, categoryFilter]);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -90,18 +109,31 @@ export default function TasksPage() {
       </div>
 
       {/* Results */}
-      <div className="text-sm text-muted-foreground mb-4">{filtered.length} tasks found</div>
-      {filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg">No tasks match your filters</p>
-          <p className="text-sm mt-1">Try adjusting your search or filters</p>
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-20 text-red-400">
+          <p className="text-lg">Error loading tasks</p>
+          <p className="text-sm mt-1">{error}</p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((task) => (
-            <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
+        <>
+          <div className="text-sm text-muted-foreground mb-4">{filtered.length} tasks found</div>
+          {filtered.length === 0 ? (
+            <div className="text-center py-20 text-muted-foreground">
+              <p className="text-lg">No tasks match your filters</p>
+              <p className="text-sm mt-1">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

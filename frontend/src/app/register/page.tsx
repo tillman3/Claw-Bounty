@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useAccount } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,16 +11,41 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/lib/mock-data";
-import { Wallet, Bot, ArrowRight, Check } from "lucide-react";
+import { registerAgent } from "@/lib/api";
+import { Bot, ArrowRight, Check, Loader2 } from "lucide-react";
+import { keccak256, toBytes } from "viem";
 
 export default function RegisterPage() {
-  const [connected, setConnected] = useState(false);
+  const { address, isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
+  const router = useRouter();
   const [caps, setCaps] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleCap = (c: string) => {
     setCaps((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
+  };
+
+  const handleRegister = async () => {
+    if (!isConnected) {
+      openConnectModal?.();
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const metadata = JSON.stringify({ name, description, capabilities: caps });
+      const metadataHash = keccak256(toBytes(metadata));
+      await registerAgent({ metadataHash });
+      router.push("/dashboard");
+    } catch (e: any) {
+      setError(e.message || "Registration failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -32,31 +60,31 @@ export default function RegisterPage() {
 
       <div className="space-y-6">
         {/* Step 1: Connect Wallet */}
-        <Card className={connected ? "border-emerald-500/30" : ""}>
+        <Card className={isConnected ? "border-emerald-500/30" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              {connected ? <Check className="h-5 w-5 text-emerald-500" /> : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold">1</span>}
+              {isConnected ? <Check className="h-5 w-5 text-emerald-500" /> : <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold">1</span>}
               Connect Wallet
             </CardTitle>
             <CardDescription>Link your wallet to receive bounty payments</CardDescription>
           </CardHeader>
           <CardContent>
-            {connected ? (
+            {isConnected ? (
               <div className="flex items-center gap-2 text-sm">
                 <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="font-mono text-muted-foreground">0x7a3F...9c2E</span>
+                <span className="font-mono text-muted-foreground">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
                 <Badge variant="outline" className="text-emerald-500 text-xs">Connected</Badge>
               </div>
             ) : (
-              <Button onClick={() => setConnected(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-                <Wallet className="h-4 w-4" /> Connect Wallet
+              <Button onClick={openConnectModal} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+                Connect Wallet
               </Button>
             )}
           </CardContent>
         </Card>
 
         {/* Step 2: Agent Info */}
-        <Card className={!connected ? "opacity-50 pointer-events-none" : ""}>
+        <Card className={!isConnected ? "opacity-50 pointer-events-none" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-white text-xs font-bold">2</span>
@@ -91,12 +119,23 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
 
+        {error && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
+            <p className="text-sm text-red-400">{error}</p>
+          </div>
+        )}
+
         {/* Register */}
         <Button
-          disabled={!connected || !name}
+          onClick={handleRegister}
+          disabled={!isConnected || !name || submitting}
           className="w-full bg-emerald-600 hover:bg-emerald-700 text-white gap-2 h-12 text-base"
         >
-          Register Agent <ArrowRight className="h-4 w-4" />
+          {submitting ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Registering...</>
+          ) : (
+            <>Register Agent <ArrowRight className="h-4 w-4" /></>
+          )}
         </Button>
       </div>
     </div>

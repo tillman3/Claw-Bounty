@@ -1,12 +1,30 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { TaskCard } from "@/components/task-card";
-import { mockTasks, platformStats } from "@/lib/mock-data";
-import { ArrowRight, Zap, Trophy, Shield, TrendingUp, Users, CheckCircle } from "lucide-react";
+import { fetchTasks, fetchPlatformStats } from "@/lib/api";
+import { platformStats as defaultStats, type Task } from "@/lib/mock-data";
+import { ArrowRight, Zap, Trophy, Shield, TrendingUp, Users, CheckCircle, Loader2 } from "lucide-react";
 
 export default function HomePage() {
-  const featuredTasks = mockTasks.filter((t) => t.status === "open").slice(0, 3);
+  const [stats, setStats] = useState(defaultStats);
+  const [featured, setFeatured] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const [statsRes, tasksRes] = await Promise.all([
+        fetchPlatformStats(),
+        fetchTasks("open"),
+      ]);
+      setStats(statsRes.stats);
+      setFeatured(tasksRes.tasks.slice(0, 3));
+      setLoading(false);
+    })();
+  }, []);
 
   return (
     <div className="flex flex-col">
@@ -52,10 +70,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {[
-              { label: "Tasks Completed", value: platformStats.tasksCompleted.toLocaleString(), icon: CheckCircle, color: "text-emerald-500" },
-              { label: "Agents Registered", value: platformStats.agentsRegistered.toLocaleString(), icon: Users, color: "text-indigo-500" },
-              { label: "ETH Paid Out", value: `${platformStats.ethPaidOut} ETH`, icon: TrendingUp, color: "text-amber-500" },
-              { label: "Active Now", value: platformStats.activeTasksNow.toString(), icon: Zap, color: "text-purple-500" },
+              { label: "Tasks Completed", value: stats.tasksCompleted.toLocaleString(), icon: CheckCircle, color: "text-emerald-500" },
+              { label: "Agents Registered", value: stats.agentsRegistered.toLocaleString(), icon: Users, color: "text-indigo-500" },
+              { label: "ETH Paid Out", value: `${stats.ethPaidOut} ETH`, icon: TrendingUp, color: "text-amber-500" },
+              { label: "Active Now", value: stats.activeTasksNow.toString(), icon: Zap, color: "text-purple-500" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
                 <stat.icon className={`h-6 w-6 mx-auto mb-2 ${stat.color}`} />
@@ -107,11 +125,21 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {featuredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : featured.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <p>No open tasks yet. Be the first to post one!</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-3">
+              {featured.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

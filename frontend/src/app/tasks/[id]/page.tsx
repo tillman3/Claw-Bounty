@@ -1,10 +1,14 @@
-import { notFound } from "next/navigation";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { mockTasks, CATEGORIES } from "@/lib/mock-data";
+import { fetchTask } from "@/lib/api";
+import { CATEGORIES, type Task } from "@/lib/mock-data";
 import { ArrowLeft, Clock, Users, CheckCircle, Circle, Loader2 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -39,10 +43,39 @@ function getTimelineIndex(status: string) {
   }
 }
 
-export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const task = mockTasks.find((t) => t.id === parseInt(id));
-  if (!task) notFound();
+export default function TaskDetailPage() {
+  const params = useParams();
+  const id = parseInt(params.id as string);
+  const [task, setTask] = useState<Task | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isNaN(id)) { setError("Invalid task ID"); setLoading(false); return; }
+    (async () => {
+      const { task: t } = await fetchTask(id);
+      if (!t) setError("Task not found");
+      else setTask(t);
+      setLoading(false);
+    })();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-32">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error || !task) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 text-center">
+        <p className="text-lg text-red-400">{error || "Task not found"}</p>
+        <Link href="/tasks" className="text-indigo-500 hover:underline text-sm mt-2 inline-block">← Back to Tasks</Link>
+      </div>
+    );
+  }
 
   const cat = CATEGORIES.find((c) => c.value === task.category);
   const daysLeft = Math.max(0, Math.ceil((new Date(task.deadline).getTime() - Date.now()) / 86400000));

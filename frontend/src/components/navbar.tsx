@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Moon, Sun, Wallet } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -63,10 +64,9 @@ export function Navbar() {
             {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
 
-          <Button className="hidden sm:flex bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-            <Wallet className="h-4 w-4" />
-            Connect Wallet
-          </Button>
+          <div className="hidden sm:block">
+            <ConnectButton chainStatus="icon" showBalance={false} />
+          </div>
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
@@ -91,10 +91,9 @@ export function Navbar() {
                     {link.label}
                   </Link>
                 ))}
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 mt-4">
-                  <Wallet className="h-4 w-4" />
-                  Connect Wallet
-                </Button>
+                <div className="mt-4">
+                  <ConnectButton chainStatus="icon" showBalance={false} />
+                </div>
               </nav>
             </SheetContent>
           </Sheet>
