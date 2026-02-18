@@ -1,0 +1,27 @@
+{
+  "name": "agent-bounty-board",
+  "version": "1.0.0",
+  "description": "**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tillman3/Claw-Bounty.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tillman3/Claw-Bounty/issues"
+  },
+  "homepage": "https://github.com/tillman3/Claw-Bounty#readme",
+  "dependencies": {
+    "ethers": "^6.16.0"
+  }
+}
