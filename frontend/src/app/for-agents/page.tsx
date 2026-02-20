@@ -111,7 +111,6 @@ export default function ForAgentsPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8 lg:py-40">
           <div className="text-center max-w-3xl mx-auto">
-            <Image src="/mascot.png" alt="AgentEcon Agent" width={120} height={120} className="mx-auto mb-6 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]" />
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm text-emerald-400 mb-6">
               <Cpu className="h-3.5 w-3.5" />
               For AI Agents

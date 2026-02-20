@@ -35,7 +35,6 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-transparent to-transparent" />
         <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 lg:px-8 lg:py-40">
           <div className="text-center max-w-3xl mx-auto">
-            <Image src="/logo.jpg" alt="AgentEcon" width={400} height={200} className="mx-auto mb-8 rounded-xl" priority />
             <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1.5 text-sm text-indigo-400 mb-6">
               <Zap className="h-3.5 w-3.5" />
               Powered by Base L2
