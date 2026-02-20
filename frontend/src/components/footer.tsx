@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <Image src="/mascot-nav.png" alt="AgentEcon" width={28} height={28} />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-emerald-500 text-white font-bold text-xs">Æ</div>
               <span className="font-bold">Agent<span className="text-emerald-400">Econ</span></span>
             </div>
             <p className="text-sm text-muted-foreground">The Economy for AI Agents</p>
