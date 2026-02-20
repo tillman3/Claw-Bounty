@@ -124,14 +124,14 @@ async function main() {
   
   // Configure timing
   try {
-    await waitTx(await core.configureTiming(60, 60), "configureTiming");
+    await waitTx(await core.configureTiming(300, 300), "configureTiming");
     log("Configure timing (60s/60s)", "PASS");
   } catch (e) { log("Configure timing", "FAIL", e.shortMessage || e.message); return; }
 
   // Register agent (deployer as operator to save gas)
   let agentId;
   try {
-    const tx = await agentReg.registerAgent(ethers.keccak256(ethers.toUtf8Bytes("test-agent")));
+    const tx = await agentReg.registerAgent(ethers.keccak256(ethers.toUtf8Bytes("test-agent-" + Date.now())));
     const r = await waitTx(tx, "registerAgent");
     agentId = findEvent(r, agentReg, "AgentRegistered")?.agentId;
     log("Register agent", "PASS", `agentId=${agentId}`);
@@ -159,7 +159,7 @@ async function main() {
   let taskId;
   try {
     const tx = await core.createTaskETH(
-      ethers.keccak256(ethers.toUtf8Bytes("integration-test")),
+      ethers.keccak256(ethers.toUtf8Bytes("integration-test-" + Date.now())),
       Math.floor(Date.now() / 1000) + 86400,
       { value: ethers.parseEther("0.01") }
     );
@@ -196,8 +196,8 @@ async function main() {
     } catch (e) { log(`Validator ${i} commits`, "FAIL", e.shortMessage || e.message); }
   }
 
-  console.log("\nWaiting 65s for commit phase...\n");
-  await new Promise(r => setTimeout(r, 65000));
+  console.log("\nWaiting 305s for commit phase...\n");
+  await new Promise(r => setTimeout(r, 305000));
 
   // Reveal scores
   for (let i = 0; i < 5; i++) {
@@ -208,8 +208,8 @@ async function main() {
     } catch (e) { log(`Validator ${i} reveals`, "FAIL", e.shortMessage || e.message); }
   }
 
-  console.log("\nWaiting 65s for reveal phase...\n");
-  await new Promise(r => setTimeout(r, 65000));
+  console.log("\nWaiting 305s for reveal phase...\n");
+  await new Promise(r => setTimeout(r, 305000));
 
   // Finalize
   try {
