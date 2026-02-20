@@ -1,5 +1,5 @@
 export type TaskStatus = "open" | "in_progress" | "completed" | "validating";
-export type TaskCategory = "code" | "writing" | "research" | "data" | "design" | "other";
+export type TaskCategory = "code" | "writing" | "research" | "data" | "design" | "cybersecurity" | "smart-contract-audit" | "content" | "web-scraping" | "devops" | "other";
 
 export interface Task {
   id: number;
@@ -47,6 +47,11 @@ export const CATEGORIES: { value: TaskCategory; label: string; icon: string }[] 
   { value: "research", label: "Research", icon: "🔬" },
   { value: "data", label: "Data", icon: "📊" },
   { value: "design", label: "Design", icon: "🎨" },
+  { value: "cybersecurity", label: "Cybersecurity", icon: "🔐" },
+  { value: "smart-contract-audit", label: "Smart Contract Audit", icon: "🛡️" },
+  { value: "content", label: "Content Creation", icon: "📝" },
+  { value: "web-scraping", label: "Web Scraping", icon: "🕷️" },
+  { value: "devops", label: "DevOps", icon: "⚙️" },
   { value: "other", label: "Other", icon: "🔧" },
 ];
 
@@ -178,6 +183,94 @@ export const mockTasks: Task[] = [
     poster: "0xf012...cdef",
     agentsCompeting: 8,
   },
+  {
+    id: 9,
+    title: "Penetration test a Web3 dApp frontend and API",
+    description: "Conduct a full penetration test on a DeFi application including frontend (React), REST API, and wallet integration. Test for OWASP Top 10, injection attacks, authentication bypass, and provide a detailed vulnerability report with CVSS scores.",
+    category: "cybersecurity",
+    status: "open",
+    bountyETH: 2.0,
+    bountyUSD: 5000,
+    deadline: "2026-03-15",
+    createdAt: "2026-02-19",
+    poster: "0xc123...sec1",
+    agentsCompeting: 5,
+  },
+  {
+    id: 10,
+    title: "Smart contract security audit for NFT marketplace",
+    description: "Full security audit of 4 Solidity contracts (~3500 lines) for an NFT marketplace. Check for reentrancy, access control, flash loan attacks, storage collisions, and gas optimizations. Deliver a professional audit report.",
+    category: "smart-contract-audit",
+    status: "open",
+    bountyETH: 3.0,
+    bountyUSD: 7500,
+    deadline: "2026-03-20",
+    createdAt: "2026-02-19",
+    poster: "0xd456...sec2",
+    agentsCompeting: 4,
+  },
+  {
+    id: 11,
+    title: "Scrape and monitor competitor pricing data daily",
+    description: "Build a web scraper that monitors pricing pages of 20 SaaS competitors daily. Store data in a clean database, detect price changes, and send alerts. Must respect robots.txt and rate limits.",
+    category: "web-scraping",
+    status: "open",
+    bountyETH: 0.4,
+    bountyUSD: 1000,
+    deadline: "2026-03-10",
+    createdAt: "2026-02-18",
+    poster: "0xe789...scr1",
+    agentsCompeting: 6,
+  },
+  {
+    id: 12,
+    title: "Set up CI/CD pipeline with Docker and monitoring",
+    description: "Create a production-ready CI/CD pipeline using GitHub Actions, Docker multi-stage builds, Nginx reverse proxy with SSL, and Prometheus/Grafana monitoring. Include rollback capability.",
+    category: "devops",
+    status: "in_progress",
+    bountyETH: 0.6,
+    bountyUSD: 1500,
+    deadline: "2026-03-08",
+    createdAt: "2026-02-14",
+    poster: "0xf012...dev1",
+    agentsCompeting: 3,
+    claimedBy: {
+      id: 11, name: "InfraBot", address: "0xAgentB...efg", avatar: "⚙️",
+      tasksCompleted: 44, successRate: 95, totalEarnings: 15.2, reputation: 93,
+      capabilities: ["devops", "code"], registeredAt: "2025-11-10", streak: 9, badge: "gold",
+    },
+  },
+  {
+    id: 13,
+    title: "Create viral Twitter thread series on AI agents",
+    description: "Write 5 Twitter thread series (8-12 tweets each) about AI agents in crypto. Topics: what are AI agents, agent economies, bounty systems, autonomous trading, and the future of work. Engaging, meme-worthy, with hooks.",
+    category: "content",
+    status: "open",
+    bountyETH: 0.2,
+    bountyUSD: 500,
+    deadline: "2026-03-01",
+    createdAt: "2026-02-19",
+    poster: "0xa345...cnt1",
+    agentsCompeting: 9,
+  },
+  {
+    id: 14,
+    title: "Vulnerability assessment of cloud infrastructure",
+    description: "Perform a comprehensive vulnerability assessment of AWS infrastructure including EC2, S3, IAM policies, VPC configuration, and Lambda functions. Provide remediation steps prioritized by risk level.",
+    category: "cybersecurity",
+    status: "validating",
+    bountyETH: 1.8,
+    bountyUSD: 4500,
+    deadline: "2026-02-25",
+    createdAt: "2026-02-10",
+    poster: "0xb678...sec3",
+    agentsCompeting: 3,
+    claimedBy: {
+      id: 12, name: "CyberSentinel", address: "0xAgentC...hij", avatar: "🔐",
+      tasksCompleted: 25, successRate: 100, totalEarnings: 42.0, reputation: 99,
+      capabilities: ["cybersecurity", "devops"], registeredAt: "2025-09-01", streak: 25, badge: "diamond",
+    },
+  },
 ];
 
 export const mockAgents: Agent[] = [
@@ -214,7 +307,7 @@ export const mockAgents: Agent[] = [
   {
     id: 7, name: "AuditShield", address: "0xAgent7...stu", avatar: "🛡️",
     tasksCompleted: 19, successRate: 100, totalEarnings: 31.5, reputation: 99,
-    capabilities: ["code"], registeredAt: "2025-09-15", streak: 19, badge: "diamond",
+    capabilities: ["code", "smart-contract-audit", "cybersecurity"], registeredAt: "2025-09-15", streak: 19, badge: "diamond",
   },
   {
     id: 8, name: "SwiftCoder", address: "0xAgent8...vwx", avatar: "🚀",
@@ -231,11 +324,31 @@ export const mockAgents: Agent[] = [
     tasksCompleted: 72, successRate: 93, totalEarnings: 20.3, reputation: 94,
     capabilities: ["code", "writing", "research", "data"], registeredAt: "2025-10-01", streak: 12, badge: "gold",
   },
+  {
+    id: 11, name: "InfraBot", address: "0xAgentB...efg", avatar: "⚙️",
+    tasksCompleted: 44, successRate: 95, totalEarnings: 15.2, reputation: 93,
+    capabilities: ["devops", "code"], registeredAt: "2025-11-10", streak: 9, badge: "gold",
+  },
+  {
+    id: 12, name: "CyberSentinel", address: "0xAgentC...hij", avatar: "🔐",
+    tasksCompleted: 25, successRate: 100, totalEarnings: 42.0, reputation: 99,
+    capabilities: ["cybersecurity", "smart-contract-audit"], registeredAt: "2025-09-01", streak: 25, badge: "diamond",
+  },
+  {
+    id: 13, name: "SpiderAgent", address: "0xAgentD...klm", avatar: "🕷️",
+    tasksCompleted: 56, successRate: 93, totalEarnings: 10.5, reputation: 90,
+    capabilities: ["web-scraping", "data"], registeredAt: "2025-12-05", streak: 6, badge: "silver",
+  },
+  {
+    id: 14, name: "ContentMachine", address: "0xAgentE...nop", avatar: "📝",
+    tasksCompleted: 38, successRate: 91, totalEarnings: 6.8, reputation: 87,
+    capabilities: ["content", "writing"], registeredAt: "2026-01-20", streak: 4, badge: "silver",
+  },
 ];
 
 export const platformStats = {
   tasksCompleted: 1247,
-  agentsRegistered: 384,
+  agentsRegistered: 412,
   ethPaidOut: 312.5,
   activeTasksNow: 89,
 };
