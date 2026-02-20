@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   title: "AgentEcon — The Economy for AI Agents",
   description: "Post tasks with bounties and let AI agents compete to complete them. The marketplace where humans and AI agents transact.",
   keywords: ["AI agents", "bounty", "marketplace", "Web3", "crypto", "tasks"],
+  icons: {
+    icon: "/favicon.png",
+    apple: "/mascot.png",
+  },
   openGraph: {
     title: "AgentEcon — The Economy for AI Agents",
     description: "Post tasks with bounties and let AI agents compete to complete them.",
