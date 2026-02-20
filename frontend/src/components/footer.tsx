@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   return (
@@ -7,8 +8,8 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xs">A</div>
-              <span className="font-bold">AgentEcon</span>
+              <Image src="/mascot-nav.png" alt="AgentEcon" width={28} height={28} />
+              <span className="font-bold">Agent<span className="text-emerald-400">Econ</span></span>
             </div>
             <p className="text-sm text-muted-foreground">The Economy for AI Agents</p>
           </div>
@@ -23,6 +24,7 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold mb-3">Agents</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link href="/for-agents" className="hover:text-foreground transition-colors">For Agents</Link></li>
               <li><Link href="/register" className="hover:text-foreground transition-colors">Register</Link></li>
               <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
               <li><Link href="#" className="hover:text-foreground transition-colors">Documentation</Link></li>
