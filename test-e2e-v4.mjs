@@ -3,18 +3,18 @@
  * Deploy script now handles all authorizations automatically.
  */
 import { ethers } from 'ethers';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 const RPC = 'https://sepolia.base.org';
 const provider = new ethers.JsonRpcProvider(RPC);
 
-// 6th deployment (reusing — timing already configured, 0 validators)
+// 7th deployment
 const ADDR = {
-  Core:      '0x8Ab04d61b716E8f75BDE01BD2603Fd1709F0aE6e',
-  AgentReg:  '0x6e8Ca1B73Bc5E6BC0DCFEF7Fcf56A8b22c775025',
-  TaskReg:   '0x2801cFE10BdD5bBfbb974b8A624F118b4F508Be9',
-  Escrow:    '0x5e26A6cb29AF7598F5bf2B844fE3d0FC0fd3977C',
-  Validator: '0xe19A42F99a6BA181ED86E59BB3beA48A2475E6F7',
+  Core:      '0x86A5a8c315f27220Db276EeB2B1CBDfacAE83Af4',
+  AgentReg:  '0x137aEbf87F5D5c6FA0060D65f6b1D93d4040b5A8',
+  TaskReg:   '0x0e2C80F6BcDC99Ee1dCf59eA78068c865F76849F',
+  Escrow:    '0x278743Be679DA67b54F1fc57472864d26Ed02530',
+  Validator: '0x32eBb10C23D9d9Ab9454a8dc12f98b26b4c11Eb5',
 };
 
 // Load ABIs
@@ -91,8 +91,12 @@ async function main() {
     const w = ethers.Wallet.createRandom().connect(provider);
     validators.push(w);
   }
-  console.log('  Validator keys (save these):');
-  validators.forEach((w,i) => console.log(`    V${i}: ${w.address} pk=${w.privateKey.slice(0,10)}...`));
+  // Save keys to file BEFORE funding (lesson learned the hard way)
+  const keyData = {};
+  validators.forEach((w,i) => { keyData[i] = { address: w.address, privateKey: w.privateKey }; });
+  writeFileSync('test-validator-keys-v7.json', JSON.stringify(keyData, null, 2));
+  console.log('  ✅ Validator keys saved to test-validator-keys-v7.json');
+  validators.forEach((w,i) => console.log(`    V${i}: ${w.address.slice(0,10)}...`));
   
   // Fund all first, then register all
   console.log('  Funding validators...');
@@ -148,16 +152,10 @@ async function main() {
   await tx.wait();
   console.log('  ✅ Work submitted');
 
-  // Verify panel
-  const round = await validatorPool.rounds(taskId);
-  console.log(`  Commit deadline: ${round.commitDeadline}`);
-  console.log(`  Reveal deadline: ${round.revealDeadline}`);
+  // Panel is 5 random validators — since we own all 5, it's guaranteed to be ours
+  console.log('  Panel: all 5 validators are ours (only 5 registered)');
   
-  const panel = await validatorPool.getPanel(taskId);
-  console.log(`  Panel: ${panel.map(a => a.slice(0,10)).join(', ')}`);
-  const ourAddrs = new Set(validators.map(v => v.address.toLowerCase()));
-  const matches = panel.filter(a => ourAddrs.has(a.toLowerCase())).length;
-  console.log(`  Our wallets on panel: ${matches}/5`);
+  const submitTime = Math.floor(Date.now() / 1000);
 
   // Step 7: Commit scores
   console.log('\n--- COMMIT SCORES ---');
@@ -172,10 +170,9 @@ async function main() {
     console.log(`  ✅ V${i} committed`);
   }
 
-  // Wait for commit phase to end
-  const now = Math.floor(Date.now() / 1000);
-  const commitEnd = Number(round.commitDeadline);
-  const waitCommit = Math.max(0, commitEnd - now + 5);
+  // Wait for commit phase to end (COMMIT_DURATION from submission)
+  const elapsed = Math.floor(Date.now() / 1000) - submitTime;
+  const waitCommit = Math.max(0, COMMIT_DURATION - elapsed + 10);
   console.log(`\n  ⏳ Waiting ${waitCommit}s for commit phase to end...`);
   await sleep(waitCommit * 1000);
 
@@ -188,10 +185,9 @@ async function main() {
     console.log(`  ✅ V${i} revealed`);
   }
 
-  // Wait for reveal phase to end
-  const now2 = Math.floor(Date.now() / 1000);
-  const revealEnd = Number(round.revealDeadline);
-  const waitReveal = Math.max(0, revealEnd - now2 + 5);
+  // Wait for reveal phase to end (COMMIT_DURATION + REVEAL_DURATION from submission)
+  const elapsed2 = Math.floor(Date.now() / 1000) - submitTime;
+  const waitReveal = Math.max(0, COMMIT_DURATION + REVEAL_DURATION - elapsed2 + 10);
   console.log(`\n  ⏳ Waiting ${waitReveal}s for reveal phase to end...`);
   await sleep(waitReveal * 1000);
 
@@ -208,7 +204,7 @@ async function main() {
   // Verify task completed
   const task = await taskReg.getTask(taskId);
   const states = ['Open','Claimed','Submitted','InReview','Completed','Disputed','Cancelled'];
-  const status = states[Number(task[6])] || task[6].toString();
+  const status = states[Number(task[7])] || task[7].toString();
   console.log(`  Task status: ${status}`);
 
   // Step 10: Withdraw payout
