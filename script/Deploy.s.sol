@@ -40,15 +40,27 @@ contract Deploy is Script {
         );
         console.log("ABBCore:", address(core));
 
-        // 5. Set ABBCore as authorized caller on sub-contracts
+        // 5. Set ABBCore as authorized caller on ALL sub-contracts
+        agentRegistry.setAuthorizedCaller(address(core), true);
         escrow.setAuthorizedCaller(address(core), true);
         taskRegistry.setAuthorizedCaller(address(core), true);
         validatorPool.setAuthorizedCaller(address(core), true);
 
         vm.stopBroadcast();
 
+        // 6. Verify authorizations
+        require(agentRegistry.authorizedCallers(address(core)), "AgentRegistry auth failed");
+        require(escrow.authorizedCallers(address(core)), "BountyEscrow auth failed");
+        require(taskRegistry.authorizedCallers(address(core)), "TaskRegistry auth failed");
+        require(validatorPool.authorizedCallers(address(core)), "ValidatorPool auth failed");
+
         console.log("\n=== Deployment Complete ===");
+        console.log("All cross-contract authorizations verified");
         console.log("Network: Base Sepolia");
+        console.log("AgentRegistry:", address(agentRegistry));
+        console.log("TaskRegistry:", address(taskRegistry));
+        console.log("BountyEscrow:", address(escrow));
+        console.log("ValidatorPool:", address(validatorPool));
         console.log("ABBCore (main entry point):", address(core));
     }
 }
