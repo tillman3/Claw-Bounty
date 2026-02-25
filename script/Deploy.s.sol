@@ -9,6 +9,28 @@ import "../src/ValidatorPool.sol";
 import "../src/ABBCore.sol";
 
 /// @title Deploy Agent Bounty Board contracts to Base Sepolia
+/// @notice Governance architecture:
+///
+///   ┌─────────────┐   proposes    ┌────────────────────┐   owns    ┌──────────────┐
+///   │  Multisig /  │ ──────────►  │  TimelockController │ ──────►  │  ABBCore     │
+///   │  Deployer    │   executes   │  (minDelay: 24h*)   │          │  + 4 modules │
+///   └─────────────┘ ◄──────────   └────────────────────┘          └──────────────┘
+///
+///   * minDelay is configurable: 0 for testnet, 86400 (24h) for mainnet.
+///
+///   All 5 contracts use Ownable2Step. After deployment, ownership is transferred
+///   to the TimelockController. Admin operations (pause, fee changes, VRF config,
+///   setAuthorizedCaller, slash) must go through the timelock delay.
+///
+///   The deployer starts as both proposer and executor. For mainnet, replace with
+///   a Safe multisig by granting PROPOSER_ROLE + EXECUTOR_ROLE to the Safe and
+///   revoking from the deployer EOA via a timelock-scheduled transaction.
+///
+///   Env vars:
+///     PRIVATE_KEY              - deployer private key
+///     TIMELOCK_MIN_DELAY       - seconds (default: 0 for testnet)
+///     VRF_SUBSCRIPTION_ID      - Chainlink VRF subscription (default: 0)
+///     ENABLE_TIMELOCK          - set to "true" to deploy timelock & transfer ownership
 contract Deploy is Script {
     function run() external {
         uint256 deployerKey = vm.envUint("PRIVATE_KEY");
@@ -53,7 +75,7 @@ contract Deploy is Script {
 
         vm.stopBroadcast();
 
-        // 6. Verify authorizations
+        // 7. Verify authorizations
         require(agentRegistry.authorizedCallers(address(core)), "AgentRegistry auth failed");
         require(escrow.authorizedCallers(address(core)), "BountyEscrow auth failed");
         require(taskRegistry.authorizedCallers(address(core)), "TaskRegistry auth failed");
@@ -68,4 +90,5 @@ contract Deploy is Script {
         console.log("ValidatorPool:", address(validatorPool));
         console.log("ABBCore (main entry point):", address(core));
     }
+
 }

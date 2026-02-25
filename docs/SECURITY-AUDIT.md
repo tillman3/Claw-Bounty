@@ -1,222 +1,236 @@
 # Security Audit Report — AgentEcon Smart Contracts
 
-**Date:** 2026-02-21  
+**Date:** 2026-02-25 (Updated)  
+**Previous Audit:** 2026-02-21  
 **Auditor:** TARS (automated)  
 **Contracts:** ABBCore, AgentRegistry, TaskRegistry, BountyEscrow, ValidatorPool  
 **Solidity:** 0.8.24 (built-in overflow protection)  
-**Framework:** OpenZeppelin (Ownable2Step, Pausable, ReentrancyGuard, SafeERC20)
+**Framework:** OpenZeppelin (Ownable2Step, Pausable, ReentrancyGuard, SafeERC20)  
+**Notable Change:** Chainlink VRF V2.5 integrated for panel selection randomness
 
 ---
 
 ## Summary
 
-| Severity | Count |
-|----------|-------|
-| Critical | 1 |
-| High | 3 |
-| Medium | 5 |
-| Low | 4 |
-| Informational | 5 |
+| Severity | Count | Resolved | Open |
+|----------|-------|----------|------|
+| Critical | 1 | 1 | 0 |
+| High | 4 | 0 | 4 |
+| Medium | 4 | 0 | 4 |
+| Low | 4 | 0 | 4 |
+| Informational | 6 | — | — |
 
-**Overall Risk: MEDIUM-HIGH** — The critical finding (validator panel manipulation) and high findings need to be addressed before mainnet deployment.
+**Overall Risk: MEDIUM** — Critical randomness issue resolved. Remaining high findings need fixes before mainnet.
 
 ---
 
 ## Critical
 
-### C-1: Validator Panel Selection is Manipulable by Miners/Sequencers
+### C-1: Validator Panel Selection is Manipulable by Miners/Sequencers — ✅ RESOLVED
 
-**Contract:** `ValidatorPool.selectPanel()`  
-**Lines:** ~165-190
+**Status:** RESOLVED (2026-02-24)  
+**Resolution:** Chainlink VRF V2.5 integrated. `requestPanel()` calls `vrfCoordinator.requestRandomWords()`, and panel selection occurs in `rawFulfillRandomWords()` callback with verified on-chain randomness. Fisher-Yates shuffle uses VRF-provided seed.
 
-**Description:** The panel selection uses `block.timestamp` and `block.prevrandao` as the randomness seed:
-```solidity
-uint256 seed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, taskId)));
-```
-On L2s like Base, the sequencer controls `block.timestamp` and `prevrandao`, meaning a malicious sequencer (or MEV actor colluding with the sequencer) can influence which validators are selected for a panel.
-
-**Impact:** A malicious actor could ensure their own validators are selected for every review, rubber-stamping their own submissions and draining bounties.
-
-**Recommendation:** Integrate Chainlink VRF (already marked as TODO). This is the #1 priority for mainnet.
+**Verification:**
+- `rawFulfillRandomWords` correctly checks `msg.sender == address(vrfCoordinator)` ✅
+- `panelSelected[taskId]` is only set inside VRF callback ✅
+- `panelSelected` cannot be externally manipulated — no setter, only written in callback ✅
+- `PanelAlreadyRequested` check prevents duplicate requests ✅
 
 ---
 
 ## High
 
-### H-1: `commitScore` Does Not Verify Caller is on the Panel
+### H-1: `commitScore` Does Not Verify Caller is on the Panel — ⚠️ OPEN
 
-**Contract:** `ValidatorPool.commitScore()`  
+**Contract:** `ValidatorPool.commitScore()`
 
-**Description:** Any active validator can commit a score for any task — not just those selected for the panel. The function only checks `onlyActiveValidator`, not membership in `round.validators[]`.
+**Description:** Any active validator can commit a score for any task — not just those selected for the panel. Only `onlyActiveValidator` is checked, not panel membership.
 
-**Impact:** Non-panel validators could stuff commits. While `finalizeRound` only iterates `round.validators`, the extra commits waste gas and could confuse off-chain monitoring.
+**Impact:** Non-panel validators can stuff commits. While `finalizeRound` only iterates `round.validators`, the extra state writes waste gas and pollute the `commitments` mapping.
 
-**Recommendation:** Add a panel membership check:
-```solidity
-bool onPanel = false;
-for (uint i; i < round.validators.length; i++) {
-    if (round.validators[i] == msg.sender) { onPanel = true; break; }
-}
-require(onPanel, "Not on panel");
-```
+**Recommendation:** Add panel membership check before accepting commit.
 
-### H-2: `createTaskToken` — Token Transfer Happens from `depositor` (msg.sender of ABBCore), Not the Actual User
+### H-2: Token Approval UX — User Must Approve BountyEscrow, Not ABBCore — ⚠️ OPEN
 
 **Contract:** `BountyEscrow.depositToken()` + `ABBCore.createTaskToken()`
 
-**Description:** In `ABBCore.createTaskToken()`, the escrow calls `safeTransferFrom(depositor, ...)` where `depositor = msg.sender` (the user). However, the user must have approved **BountyEscrow** (not ABBCore) to spend their tokens. The flow is:
-1. User calls `ABBCore.createTaskToken()`
-2. ABBCore calls `bountyEscrow.depositToken(taskId, msg.sender, token, amount)`
-3. BountyEscrow calls `safeTransferFrom(msg.sender_of_ABBCore, this, amount)` — but `msg.sender` inside BountyEscrow is **ABBCore**, not the user
+**Description:** `safeTransferFrom(depositor, address(this), amount)` in BountyEscrow requires the user to have approved the **BountyEscrow** contract directly, but the user interacts with ABBCore.
 
-Wait — actually `depositor` is passed explicitly as the user's address. So `safeTransferFrom(depositor=user, address(this), amount)` requires the **user** to have approved the **BountyEscrow** contract. This works but is confusing — the user interacts with ABBCore but must approve BountyEscrow.
+**Impact:** Failed transactions for users who approve ABBCore instead of BountyEscrow.
 
-**Impact:** Users will get reverts unless they know to approve BountyEscrow directly. UX issue that will cause failed transactions.
+**Recommendation:** Have ABBCore pull tokens first and forward, or use EIP-2612 permit flow.
 
-**Recommendation:** Either:
-- Have ABBCore pull tokens from user first, then forward to escrow, OR
-- Document clearly that users must approve BountyEscrow, OR
-- Use a permit-based flow
-
-### H-3: `finalizeReview` Can Be Called by Anyone — Rejected Work Path Disputes and Resolves in Same TX
+### H-3: `finalizeReview` Rejection Bypasses Dispute Window — ⚠️ OPEN
 
 **Contract:** `ABBCore.finalizeReview()`
 
-**Description:** When work is rejected, `finalizeReview` calls:
-```solidity
-taskRegistry.disputeTask(taskId, address(this));
-taskRegistry.resolveDispute(taskId, false);
-```
-This transitions the task through Disputed → Resolved in a single transaction, skipping any actual dispute window. The dispute mechanism becomes meaningless for validator-rejected work.
+**Description:** On validator rejection, `disputeTask()` and `resolveDispute()` are called in the same transaction — no dispute window for the agent.
 
-**Impact:** Agents have no recourse to dispute a validator panel's rejection. The dispute flow is only useful when manually raised.
+**Impact:** Agents have zero recourse against unfair validator rejections through the on-chain dispute path.
 
-**Recommendation:** On rejection, move to a Disputed state and allow a time window for the agent to contest before auto-resolving.
+**Recommendation:** On rejection, move to Disputed state with a configurable grace period before auto-resolution.
+
+### H-4: VRF Callback Can Silently Create Incomplete Panel — 🆕 NEW
+
+**Contract:** `ValidatorPool.rawFulfillRandomWords()`
+
+**Description:** `activeValidatorCount >= PANEL_SIZE` is checked at `requestPanel()` time, but validators can deactivate (unstake) between VRF request and callback. If `activeValidatorCount` drops below 5, the Fisher-Yates loop selects fewer than `PANEL_SIZE` validators, but the round is still initialized with `panelSelected[taskId] = true`. The round proceeds with an undersized panel.
+
+**Impact:** A review round with <5 validators has weaker consensus guarantees. With <3 active panel members, achieving `CONSENSUS_THRESHOLD` (3) reveals becomes impossible, causing permanent DoS (task stuck in InReview — see M-2).
+
+**Recommendation:** After the selection loop, verify `selected == PANEL_SIZE`. If not, mark the round as failed and allow re-request.
 
 ---
 
 ## Medium
 
-### M-1: No Slashing of Non-Revealing Validators
+### M-1: No Slashing of Non-Revealing Validators — ⚠️ OPEN
 
 **Contract:** `ValidatorPool.finalizeRound()`
 
-**Description:** Validators who commit but don't reveal face no penalty. They can grief the system by committing to prevent others from knowing if quorum will be met, then not revealing.
+**Description:** Validators who commit but don't reveal face no penalty. They can grief the system by committing then withholding reveals.
 
-**Impact:** If >2 of 5 panel validators don't reveal, `revealCount < 3` and the scores array will be too small, but the code still proceeds with whatever reveals exist. With 0 reveals, `scores` is empty and `scores[scores.length / 2]` will revert with index out of bounds.
+**Impact:** If >2 of 5 panel validators don't reveal, quorum cannot be met. Combined with M-2, this permanently locks the task.
 
-**Recommendation:** 
-- Check `revealCount >= requiredReveals` before proceeding
-- Slash non-revealers' stake
-- Handle the 0-reveals edge case
+**Recommendation:** Slash non-revealers during `finalizeRound`. Track who committed but didn't reveal.
 
-### M-2: `finalizeRound` Reverts on Zero Reveals
+### M-2: `finalizeRound` Reverts on Zero Reveals — DoS — ⚠️ OPEN
 
 **Contract:** `ValidatorPool.finalizeRound()`
 
-**Description:** If no validators reveal, `scores` has length 0, and `scores[scores.length / 2]` = `scores[0]` accesses an empty array, causing a revert. This locks the task permanently in `InReview`.
+**Description:** If no validators reveal, `scores` has length 0 and `scores[scores.length / 2]` causes an index-out-of-bounds revert. Task is permanently stuck in InReview, bounty locked forever.
 
-**Impact:** DoS — task can never be finalized, bounty stuck in escrow forever.
+**Impact:** Permanent DoS. Any task where all panel validators refuse to reveal is irrecoverable.
 
-**Recommendation:** Add `require(round.revealCount > 0, "No reveals")` with a fallback path (e.g., refund poster).
+**Recommendation:** `require(revealCount > 0)` with a fallback path (refund poster, allow re-panel).
 
-### M-3: Agent ID 0 Ambiguity
+### M-3: Agent ID 0 Ambiguity — ⚠️ OPEN
 
 **Contract:** `AgentRegistry`, `TaskRegistry`
 
-**Description:** `nextAgentId` starts at 0, so the first agent gets ID 0. In `TaskRegistry`, `assignedAgent` defaults to 0, which is also a valid agent ID. There's no way to distinguish "no agent assigned" from "agent 0 assigned".
+**Description:** `nextAgentId` starts at 0; `assignedAgent` defaults to 0. Cannot distinguish "no agent" from "agent 0".
 
-**Impact:** Agent 0 could appear assigned to tasks they haven't claimed.
+**Recommendation:** Start `nextAgentId` at 1.
 
-**Recommendation:** Start `nextAgentId` at 1, or use a sentinel value like `type(uint256).max` for unassigned.
+### M-4: No VRF Request Timeout/Retry Mechanism — 🆕 NEW
 
-### M-4: `revealScore` Error Message Reuse — `CommitDeadlinePassed` Used for "Too Early"
+**Contract:** `ValidatorPool`
 
-**Contract:** `ValidatorPool.revealScore()`
+**Description:** If the VRF callback never fires (coordinator issue, insufficient LINK/ETH, callback gas too low), the task is stuck: `panelSelected[taskId]` remains false, round not initialized, but `_rounds[taskId].initialized` is false so no re-request is possible since `PanelAlreadyRequested` check passes (it checks `panelSelected[taskId] || _rounds[taskId].initialized`). Wait — actually if callback never fires, both are false, so re-request IS possible. However, the `PendingPanelRequest` for the old requestId remains with `pending = true`, wasting state. More critically: there's no mechanism for the system to *know* VRF failed and trigger a re-request. The task just sits in InReview indefinitely.
 
-**Description:** The check `if (block.timestamp <= round.commitDeadline) revert CommitDeadlinePassed()` fires when the commit deadline has NOT yet passed (i.e., reveal is too early). The error name is misleading.
+**Impact:** Tasks can get stuck waiting for VRF indefinitely with no automatic recovery.
 
-**Recommendation:** Use a dedicated error like `CommitPhaseNotEnded()`.
-
-### M-5: Panel Selection Can Fail Silently with Inactive Validators in List
-
-**Contract:** `ValidatorPool.selectPanel()`
-
-**Description:** `activeValidatorCount` might be ≥5 but the Fisher-Yates loop might not find 5 active validators if the shuffle order is unlucky and many inactive validators are at the front. The loop runs `len` iterations but breaks early based on `selected`.
-
-Actually on closer inspection, the loop iterates all `len` candidates so this is fine — it will find all active ones. But if exactly 5 are active and some get swapped to later positions... no, the full scan handles it. This is actually OK but the `activeValidatorCount` check should be `>=` not `<` (it is `<`, which is correct).
-
-**Revised:** This is less of an issue than initially thought. Downgraded to informational.
+**Recommendation:** Add a timeout (e.g., 1 hour). If VRF hasn't called back, allow `retryPanelRequest(taskId)` that cancels the old pending request and issues a new one.
 
 ---
 
 ## Low
 
-### L-1: `validatorList` Array Grows Indefinitely
+### L-1: `validatorList` Array Grows Indefinitely — OPEN
 
-**Contract:** `ValidatorPool`
+Deactivated validators remain in list. Panel selection iterates entire array — gas cost grows linearly.
 
-**Description:** Deactivated validators remain in `validatorList`. Over time, panel selection iterates an ever-growing array, increasing gas costs.
+### L-2: Escrow Deposit Overwrite — OPEN
 
-**Recommendation:** Consider a compact list or epoch-based rotation.
+`depositETH`/`depositToken` silently overwrite existing escrow entries for the same `taskId`. First deposit's ETH is stranded.
 
-### L-2: No Event Emitted on Escrow Deposit Overwrite
+**Recommendation:** `require(escrows[taskId].amount == 0, "Already deposited")`.
 
-**Contract:** `BountyEscrow.depositETH()` / `depositToken()`
+### L-3: `configureTiming` Allows Zero Duration — OPEN
 
-**Description:** If `depositETH` is called twice for the same `taskId`, the previous entry is silently overwritten, losing track of the first deposit's ETH (which is still in the contract but unaccounted for).
+Owner can set `commitDuration` and `revealDuration` to 0.
 
-**Recommendation:** Add `require(escrows[taskId].amount == 0, "Already deposited")`.
+**Recommendation:** Enforce minimum durations (e.g., 1 hour).
 
-### L-3: `configureTiming` Allows Zero Duration
+### L-4: Slashed Funds Locked Forever — OPEN
 
-**Contract:** `ABBCore.configureTiming()`
+No withdrawal mechanism for slashed ETH. Funds are permanently locked in the contract.
 
-**Description:** Owner can set `commitDuration` and `revealDuration` to 0, making commit-reveal meaningless.
-
-**Recommendation:** Add minimum duration checks.
-
-### L-4: Slashed Funds Stay in Contract Forever
-
-**Contract:** `ValidatorPool.slash()`
-
-**Description:** Slashed ETH is deducted from the validator's `stakeAmount` but there's no mechanism to withdraw slashed funds from the contract. They're locked permanently.
-
-**Recommendation:** Add a treasury withdrawal function for slashed funds.
+**Recommendation:** Add treasury withdrawal for slashed funds.
 
 ---
 
 ## Informational
 
-### I-1: Solidity 0.8.24 Provides Overflow Protection
-All arithmetic is safe by default. No custom SafeMath needed. ✅
+### I-1: Solidity 0.8.24 Overflow Protection ✅
+### I-2: `Ownable2Step` Correctly Used ✅
+### I-3: Pull Payment Pattern in BountyEscrow ✅
+### I-4: `ReentrancyGuard` on All ETH-Sending Functions ✅
+### I-5: Fee Calculation Capped at 10% ✅
 
-### I-2: `Ownable2Step` Used Correctly
-Two-step ownership transfer prevents accidental transfers. ✅
+### I-6: `vrfRequestConfirmations = 0` — 🆕 NEW
 
-### I-3: Pull Payment Pattern in BountyEscrow
-`release()` credits balances, `withdrawETH()`/`withdrawToken()` are separate — good pattern preventing reentrancy on release. ✅
+**Contract:** `ValidatorPool`
 
-### I-4: `ReentrancyGuard` Applied to All ETH-Sending Functions
-`withdrawETH`, `completeUnstake`, `finalizeReview` all use `nonReentrant`. ✅
+**Description:** Default VRF request confirmations is 0. On mainnet, this means the VRF response can be delivered in the same block as the request, offering minimal reorg protection. On Base L2 this is acceptable (sequencer finality), but on L1 Ethereum this would be risky.
 
-### I-5: Fee Calculation
-`feeBps` capped at 1000 (10%) via `MAX_FEE_BPS`. Fee math: `feeAmount = (amount * feeBps) / 10_000`. For 5% (500 bps), this is correct. No rounding exploit possible at realistic amounts.
+**Recommendation:** For L1 deployment, set to ≥3. For Base, 0 is acceptable. Make sure `setVRFConfig` is called with appropriate value before mainnet.
 
 ---
 
-## Commit-Reveal Analysis
+## VRF Integration Deep Dive
 
-The commit-reveal scheme is **mostly correct**:
-- Validators commit `keccak256(taskId, score, salt)` during commit phase
-- Reveals happen after commit deadline, before reveal deadline
-- Scores are hidden during commit phase ✅
-- **However:** Commits are visible on-chain (`commitments` mapping is public by default in Solidity). While the hash doesn't reveal the score, the *timing* and *identity* of committers is visible. A validator could wait until seeing other commits before committing, or not commit at all based on who else committed. This is inherent to on-chain commit-reveal but worth noting.
+### rawFulfillRandomWords — Griefing Analysis
+
+| Attack Vector | Possible? | Notes |
+|---|---|---|
+| Call from non-coordinator | ❌ | `msg.sender != vrfCoordinator` check |
+| Replay same requestId | ❌ | `req.pending` set to false after first call |
+| Manipulate randomness | ❌ | VRF provides cryptographic proof |
+| DoS via gas | ⚠️ | If `validatorList` is very large (>1000), Fisher-Yates may exceed `callbackGasLimit` (500k). Monitor and adjust. |
+| Front-run callback | ❌ | Only coordinator can call; validators can't deregister in same tx |
+
+### panelSelected Mapping — Manipulation Analysis
+
+- Only written in `rawFulfillRandomWords` (set to `true`)
+- Only read in `requestPanel` (to prevent duplicates)
+- No external setter, no `delete`, no reset mechanism
+- **Verdict: Cannot be manipulated** ✅
+- **Caveat:** No way to reset if a round needs to be retried — needs an admin reset function for stuck rounds
+
+---
+
+## Commit-Reveal Analysis (Updated)
+
+The commit-reveal scheme remains mostly correct:
+- Commits hidden via `keccak256(taskId, score, salt)` ✅
+- Reveal phase enforced after commit deadline ✅
+- **H-1 still open:** Non-panel validators can commit (doesn't affect finalization but is messy)
+- **M-4 error message** for `CommitDeadlinePassed` in reveal-too-early case is misleading (cosmetic)
+
+---
+
+## Reentrancy Analysis
+
+| Function | Guard | Safe? |
+|---|---|---|
+| `BountyEscrow.withdrawETH()` | `nonReentrant` + CEI | ✅ |
+| `BountyEscrow.withdrawToken()` | `nonReentrant` + CEI | ✅ |
+| `BountyEscrow.release()` | `nonReentrant` (no external call) | ✅ |
+| `ValidatorPool.completeUnstake()` | `nonReentrant` + CEI | ✅ |
+| `ABBCore.finalizeReview()` | `nonReentrant` | ✅ |
+
+**No reentrancy vulnerabilities found.** ✅
+
+---
+
+## Access Control Summary
+
+| Contract | Pattern | Notes |
+|---|---|---|
+| ABBCore | `Ownable2Step` | Owner controls pause, timing, disputes |
+| AgentRegistry | `Ownable2Step` + `authorizedCallers` | ABBCore authorized for `recordOutcome` |
+| TaskRegistry | `Ownable2Step` + `authorizedCallers` | ABBCore authorized for state transitions |
+| BountyEscrow | `Ownable2Step` + `authorizedCallers` | ABBCore authorized for deposit/release/refund |
+| ValidatorPool | `Ownable2Step` + `authorizedCallers` | ABBCore authorized; VRF coordinator for callback |
+
+**Note:** Owner has significant power (pause all contracts, resolve disputes, slash validators, configure fees/timing). TimelockController integration (in progress) will mitigate centralization risk.
 
 ---
 
 ## Gas Optimization Notes
 
-1. `GET /tasks` and `GET /agents` API endpoints iterate all IDs sequentially — will be very slow with many tasks. Consider events-based indexing or subgraph.
-2. `validatorList` full copy in `selectPanel` is O(n) memory — costly with many validators.
-3. `operatorAgents` array in AgentRegistry never shrinks on deregister.
+1. `validatorList` full copy in `rawFulfillRandomWords` is O(n) memory — costly with many validators
+2. `operatorAgents` array in AgentRegistry never shrinks
+3. Fisher-Yates in VRF callback has hard gas ceiling (`vrfCallbackGasLimit = 500_000`) — may fail with >~200 validators
