@@ -26,6 +26,10 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     // Review timing config
     uint64 public commitDuration = 1 days;
     uint64 public revealDuration = 1 days;
+    uint64 public constant DISPUTE_WINDOW = 1 days;
+
+    // H-3 FIX: Track rejection timestamps for dispute window
+    mapping(uint256 => uint64) public rejectedAt;
 
     // --- Events ---
     event TaskCreatedAndFunded(uint256 indexed taskId, address indexed poster, uint256 amount, address token);
@@ -48,6 +52,8 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     error TaskNotInExpectedState();
     error ReviewNotFinalized();
     error TokenMismatch();
+    error DisputeWindowActive();
+    error DisputeWindowExpired();
 
     // --- Constructor ---
     constructor(
@@ -169,16 +175,33 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
             TaskRegistry.Task memory task = taskRegistry.getTask(taskId);
             agentRegistry.recordOutcome(agentId, true, task.bountyAmount);
         } else {
-            // Rejected — refund poster
-            taskRegistry.disputeTask(taskId, address(this));
-            taskRegistry.resolveDispute(taskId, false);
-            bountyEscrow.refund(taskId);
+            // H-3 FIX: Rejected — start dispute window instead of instant refund
+            // Agent can call raiseDispute() within DISPUTE_WINDOW
+            rejectedAt[taskId] = uint64(block.timestamp);
 
             uint256 agentId = taskRegistry.getAssignedAgent(taskId);
             agentRegistry.recordOutcome(agentId, false, 0);
         }
 
         emit ReviewFinalized(taskId, accepted, medianScore);
+    }
+
+    /// @notice H-3 FIX: Refund poster after dispute window expires without a dispute
+    /// @param taskId The task that was rejected
+    function claimRefundAfterRejection(uint256 taskId) external whenNotPaused nonReentrant {
+        uint64 rejected = rejectedAt[taskId];
+        if (rejected == 0) revert TaskNotInExpectedState();
+        if (block.timestamp < rejected + DISPUTE_WINDOW) revert DisputeWindowActive();
+
+        // Clear rejection state
+        delete rejectedAt[taskId];
+
+        // Now process the refund
+        taskRegistry.disputeTask(taskId, address(this));
+        taskRegistry.resolveDispute(taskId, false);
+        bountyEscrow.refund(taskId);
+
+        emit TaskCancelledAndRefunded(taskId);
     }
 
     /// @notice Cancel an open task and refund

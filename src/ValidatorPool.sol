@@ -125,6 +125,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     error IncompletePanelSelection();
     error VRFRequestNotTimedOut();
     error NoPendingRequest();
+    error NotOnPanel();
 
     // --- Modifiers ---
     modifier onlyAuthorized() {
@@ -135,6 +136,19 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     modifier onlyActiveValidator() {
         if (!validators[msg.sender].active) revert ValidatorNotActive();
         _;
+    }
+
+    /// @dev H-1 FIX: Check that caller is on the panel for this task
+    function _requireOnPanel(uint256 taskId) internal view {
+        address[] storage panel = _rounds[taskId].validators;
+        bool found;
+        for (uint256 i; i < panel.length; i++) {
+            if (panel[i] == msg.sender) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) revert NotOnPanel();
     }
 
     // --- Constructor ---
@@ -325,6 +339,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     function commitScore(uint256 taskId, bytes32 commitHash) external onlyActiveValidator {
         ReviewRound storage round = _rounds[taskId];
         if (!round.initialized) revert RoundNotFound();
+        _requireOnPanel(taskId); // H-1 FIX: only panel members can commit
         if (block.timestamp > round.commitDeadline) revert CommitDeadlinePassed();
         if (round.hasCommitted[msg.sender]) revert AlreadyCommitted();
 
@@ -339,6 +354,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
         if (score > 100) revert InvalidScore();
         ReviewRound storage round = _rounds[taskId];
         if (!round.initialized) revert RoundNotFound();
+        _requireOnPanel(taskId); // H-1 FIX: only panel members can reveal
         if (block.timestamp <= round.commitDeadline) revert CommitDeadlinePassed();
         if (block.timestamp > round.revealDeadline) revert RevealDeadlinePassed();
         if (!round.hasCommitted[msg.sender]) revert NotCommitted();
@@ -360,6 +376,22 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
         if (!round.initialized) revert RoundNotFound();
         if (round.finalized) revert RoundAlreadyFinalized();
         if (block.timestamp <= round.revealDeadline) revert RevealDeadlineNotPassed();
+
+        // M-2 FIX: Handle zero reveals gracefully (auto-reject instead of reverting)
+        if (round.revealCount == 0) {
+            round.finalized = true;
+            round.accepted = false;
+            round.medianScore = 0;
+            // M-1: Slash non-revealing panel members
+            for (uint256 i; i < round.validators.length; i++) {
+                address v = round.validators[i];
+                uint256 oldRep = validators[v].reputationScore;
+                validators[v].reputationScore = oldRep > 200 ? oldRep - 200 : 0;
+                emit ReputationUpdated(v, oldRep, validators[v].reputationScore);
+            }
+            emit RoundFinalized(taskId, false, 0);
+            return (false, 0);
+        }
 
         uint8[] memory scores = new uint8[](round.revealCount);
         uint256 idx;
@@ -389,18 +421,21 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
 
         for (uint256 i; i < round.validators.length; i++) {
             address v = round.validators[i];
+            uint256 oldRep = validators[v].reputationScore;
             if (round.hasRevealed[v]) {
                 uint8 s = round.revealedScores[v];
                 bool isOutlier = !(s + OUTLIER_DELTA >= medianScore && medianScore + OUTLIER_DELTA >= s);
-                uint256 oldRep = validators[v].reputationScore;
                 if (isOutlier) {
                     validators[v].reputationScore = oldRep > 100 ? oldRep - 100 : 0;
                 } else {
                     uint256 newRep = oldRep + 50;
                     validators[v].reputationScore = newRep > MAX_REPUTATION ? MAX_REPUTATION : newRep;
                 }
-                emit ReputationUpdated(v, oldRep, validators[v].reputationScore);
+            } else {
+                // M-1 FIX: Penalize non-revealing validators
+                validators[v].reputationScore = oldRep > 200 ? oldRep - 200 : 0;
             }
+            emit ReputationUpdated(v, oldRep, validators[v].reputationScore);
         }
 
         emit RoundFinalized(taskId, accepted, medianScore);

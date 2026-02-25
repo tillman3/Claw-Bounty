@@ -26,7 +26,7 @@ contract AgentRegistry is Ownable2Step, Pausable {
     uint256 public constant INITIAL_REPUTATION = 1_000;
 
     // --- State ---
-    uint256 public nextAgentId;
+    uint256 public nextAgentId = 1; // M-3 FIX: Start at 1 so ID 0 means "no agent"
     mapping(uint256 => Agent) internal _agents;
     mapping(address => uint256[]) public operatorAgents; // operator => agent IDs
     mapping(uint256 => bool) public agentExists;

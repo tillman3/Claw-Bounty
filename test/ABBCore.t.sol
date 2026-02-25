@@ -297,7 +297,13 @@ contract ABBCoreTest is Test {
 
         core.finalizeReview(taskId);
 
-        // Poster gets refund
+        // H-3 FIX: Refund not immediate — dispute window active
+        assertEq(bountyEscrow.claimableETH(poster), 0);
+
+        // Agent can dispute within DISPUTE_WINDOW (1 day)
+        // After dispute window expires, poster can claim refund
+        vm.warp(block.timestamp + 1 days + 1);
+        core.claimRefundAfterRejection(taskId);
         assertEq(bountyEscrow.claimableETH(poster), 1 ether);
     }
 
