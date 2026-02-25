@@ -44,6 +44,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
         uint256 taskId;
         uint64 commitDuration;
         uint64 revealDuration;
+        uint64 requestedAt;
         bool pending;
     }
 
@@ -56,6 +57,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     uint8 public constant PANEL_SIZE = 5;
     uint8 public constant PASS_SCORE = 60;
     uint8 public constant OUTLIER_DELTA = 15;
+    uint64 public constant VRF_TIMEOUT = 30 minutes;
 
     // --- VRF Config ---
     IVRFCoordinatorV2Plus public immutable vrfCoordinator;
@@ -74,6 +76,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     // VRF request tracking
     mapping(uint256 => PendingPanelRequest) public pendingRequests; // requestId => pending request
     mapping(uint256 => bool) public panelSelected; // taskId => whether panel has been selected
+    mapping(uint256 => uint256) public taskVRFRequest; // taskId => vrfRequestId (for timeout cancellation)
 
     // Authorized callers (ABBCore)
     mapping(address => bool) public authorizedCallers;
@@ -93,6 +96,8 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     event ReputationUpdated(address indexed validator, uint256 oldScore, uint256 newScore);
     event AuthorizedCallerSet(address indexed caller, bool authorized);
     event VRFConfigUpdated(bytes32 keyHash, uint256 subscriptionId, uint16 confirmations, uint32 callbackGasLimit);
+    event PanelSelectionFailed(uint256 indexed taskId, uint256 selected, uint256 required);
+    event VRFRequestCancelled(uint256 indexed taskId, uint256 indexed vrfRequestId);
 
     // --- Errors ---
     error ZeroAddress();
@@ -117,6 +122,9 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     error RoundNotFound();
     error PanelAlreadyRequested();
     error OnlyVRFCoordinator();
+    error IncompletePanelSelection();
+    error VRFRequestNotTimedOut();
+    error NoPendingRequest();
 
     // --- Modifiers ---
     modifier onlyAuthorized() {
@@ -229,8 +237,13 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
 
         // Store pending request
         pendingRequests[vrfRequestId] = PendingPanelRequest({
-            taskId: taskId, commitDuration: commitDuration, revealDuration: revealDuration, pending: true
+            taskId: taskId,
+            commitDuration: commitDuration,
+            revealDuration: revealDuration,
+            requestedAt: uint64(block.timestamp),
+            pending: true
         });
+        taskVRFRequest[taskId] = vrfRequestId;
 
         emit PanelRequested(taskId, vrfRequestId);
     }
@@ -276,11 +289,36 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
             }
         }
 
-        // If somehow not enough active validators at callback time, this round is broken
-        // but we've already checked at request time. In production, add more robust handling.
+        // H-4 FIX: Revert if we couldn't fill the panel (validators unstaked between request and callback)
+        if (selected < PANEL_SIZE) {
+            // Reset state so task can be retried
+            round.initialized = false;
+            delete panelSelected[taskId];
+            emit PanelSelectionFailed(taskId, selected, PANEL_SIZE);
+            revert IncompletePanelSelection();
+        }
+
         panelSelected[taskId] = true;
 
         emit PanelSelected(taskId, panel);
+    }
+
+    /// @notice Cancel a timed-out VRF request so the task can be retried
+    /// @dev M-4 FIX: Prevents tasks from being stuck forever if VRF callback never fires
+    function cancelTimedOutRequest(uint256 taskId) external onlyAuthorized {
+        uint256 reqId = taskVRFRequest[taskId];
+        if (reqId == 0) revert NoPendingRequest();
+
+        PendingPanelRequest storage req = pendingRequests[reqId];
+        if (!req.pending) revert NoPendingRequest();
+        if (block.timestamp < req.requestedAt + VRF_TIMEOUT) revert VRFRequestNotTimedOut();
+
+        // Clear pending state so task can be re-submitted
+        req.pending = false;
+        delete panelSelected[taskId];
+        delete taskVRFRequest[taskId];
+
+        emit VRFRequestCancelled(taskId, reqId);
     }
 
     /// @notice Commit a score hash for a task
