@@ -41,7 +41,7 @@
 
 ## High
 
-### H-1: `commitScore` Does Not Verify Caller is on the Panel — ⚠️ OPEN
+### H-1: `commitScore` Does Not Verify Caller is on the Panel — ✅ FIXED
 
 **Contract:** `ValidatorPool.commitScore()`
 
@@ -61,7 +61,7 @@
 
 **Recommendation:** Have ABBCore pull tokens first and forward, or use EIP-2612 permit flow.
 
-### H-3: `finalizeReview` Rejection Bypasses Dispute Window — ⚠️ OPEN
+### H-3: `finalizeReview` Rejection Bypasses Dispute Window — ✅ FIXED
 
 **Contract:** `ABBCore.finalizeReview()`
 
@@ -71,7 +71,7 @@
 
 **Recommendation:** On rejection, move to Disputed state with a configurable grace period before auto-resolution.
 
-### H-4: VRF Callback Can Silently Create Incomplete Panel — 🆕 NEW
+### H-4: VRF Callback Can Silently Create Incomplete Panel — ✅ FIXED
 
 **Contract:** `ValidatorPool.rawFulfillRandomWords()`
 
@@ -85,7 +85,7 @@
 
 ## Medium
 
-### M-1: No Slashing of Non-Revealing Validators — ⚠️ OPEN
+### M-1: No Slashing of Non-Revealing Validators — ✅ FIXED
 
 **Contract:** `ValidatorPool.finalizeRound()`
 
@@ -95,7 +95,7 @@
 
 **Recommendation:** Slash non-revealers during `finalizeRound`. Track who committed but didn't reveal.
 
-### M-2: `finalizeRound` Reverts on Zero Reveals — DoS — ⚠️ OPEN
+### M-2: `finalizeRound` Reverts on Zero Reveals — DoS — ✅ FIXED
 
 **Contract:** `ValidatorPool.finalizeRound()`
 
@@ -105,7 +105,7 @@
 
 **Recommendation:** `require(revealCount > 0)` with a fallback path (refund poster, allow re-panel).
 
-### M-3: Agent ID 0 Ambiguity — ⚠️ OPEN
+### M-3: Agent ID 0 Ambiguity — ✅ FIXED
 
 **Contract:** `AgentRegistry`, `TaskRegistry`
 
@@ -113,7 +113,7 @@
 
 **Recommendation:** Start `nextAgentId` at 1.
 
-### M-4: No VRF Request Timeout/Retry Mechanism — 🆕 NEW
+### M-4: No VRF Request Timeout/Retry Mechanism — ✅ FIXED
 
 **Contract:** `ValidatorPool`
 
