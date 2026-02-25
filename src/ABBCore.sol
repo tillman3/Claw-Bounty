@@ -127,7 +127,9 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
         emit TaskClaimedByAgent(taskId, agentId);
     }
 
-    /// @notice Submit work and initiate validator review
+    /// @notice Submit work and request VRF-based validator panel selection (async)
+    /// @dev Panel selection is async: VRF request is made here, panel is selected in VRF callback.
+    ///      Commit/reveal deadlines start from VRF callback, not from this call.
     /// @param taskId The task ID
     /// @param submissionHash IPFS hash of submission
     function submitWork(uint256 taskId, bytes32 submissionHash) external whenNotPaused {
@@ -139,8 +141,9 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
         taskRegistry.submitWork(taskId, submissionHash);
         taskRegistry.setInReview(taskId);
 
-        // Select validator panel
-        validatorPool.selectPanel(taskId, commitDuration, revealDuration);
+        // Request async panel selection via Chainlink VRF
+        // Panel is selected when VRF callback fires (ValidatorPool.rawFulfillRandomWords)
+        validatorPool.requestPanel(taskId, commitDuration, revealDuration);
 
         emit WorkSubmittedForReview(taskId);
     }

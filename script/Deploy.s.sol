@@ -30,8 +30,13 @@ contract Deploy is Script {
         BountyEscrow escrow = new BountyEscrow(deployer, deployer, 500);
         console.log("BountyEscrow:", address(escrow));
 
-        // 3. Deploy validator pool
-        ValidatorPool validatorPool = new ValidatorPool(deployer);
+        // 3. Deploy validator pool with VRF config
+        // Base Sepolia VRF V2.5 config
+        address vrfCoordinator = 0x5C210eF41CD1a72de73bF76eC39637bB0d3d7BEE;
+        uint256 vrfSubscriptionId = vm.envOr("VRF_SUBSCRIPTION_ID", uint256(0));
+        bytes32 vrfKeyHash = 0x9e1344a1247c8a1785d0a4681a27152bffdb43666ae5bf7d14d24a5efd44bf71;
+
+        ValidatorPool validatorPool = new ValidatorPool(deployer, vrfCoordinator, vrfSubscriptionId, vrfKeyHash);
         console.log("ValidatorPool:", address(validatorPool));
 
         // 4. Deploy orchestrator

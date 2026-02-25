@@ -7,6 +7,7 @@ import "../src/TaskRegistry.sol";
 import "../src/BountyEscrow.sol";
 import "../src/ValidatorPool.sol";
 import "../src/AgentRegistry.sol";
+import "./mocks/MockVRFCoordinator.sol";
 
 contract ABBCoreTest is Test {
     ABBCore public core;
@@ -14,6 +15,7 @@ contract ABBCoreTest is Test {
     BountyEscrow public bountyEscrow;
     ValidatorPool public validatorPool;
     AgentRegistry public agentRegistry;
+    MockVRFCoordinator public mockVRF;
 
     address public owner = address(0x1);
     address public poster = address(0x2);
@@ -24,9 +26,10 @@ contract ABBCoreTest is Test {
     function setUp() public {
         vm.startPrank(owner);
 
+        mockVRF = new MockVRFCoordinator();
         taskRegistry = new TaskRegistry(owner);
         bountyEscrow = new BountyEscrow(owner, feeRecipient, 500); // 5% fee
-        validatorPool = new ValidatorPool(owner);
+        validatorPool = new ValidatorPool(owner, address(mockVRF), 0, bytes32(0));
         agentRegistry = new AgentRegistry(owner);
 
         core = new ABBCore(
@@ -227,6 +230,9 @@ contract ABBCoreTest is Test {
         vm.prank(operator);
         core.submitWork(taskId, bytes32("submission"));
 
+        // Simulate VRF callback (panel selection)
+        _simulateVRFCallback();
+
         // Validators commit scores (all score 80)
         for (uint256 i; i < 5; i++) {
             bytes32 hash = keccak256(abi.encodePacked(taskId, uint8(80), bytes32(uint256(i + 1))));
@@ -270,6 +276,8 @@ contract ABBCoreTest is Test {
 
         vm.prank(operator);
         core.submitWork(taskId, bytes32("submission"));
+
+        _simulateVRFCallback();
 
         // Validators all score 30 (below pass threshold of 60)
         for (uint256 i; i < 5; i++) {
@@ -344,6 +352,8 @@ contract ABBCoreTest is Test {
 
         vm.prank(operator);
         core.submitWork(taskId, bytes32("sub"));
+
+        _simulateVRFCallback();
 
         // Commit with score 80
         bytes32 hash = keccak256(abi.encodePacked(taskId, uint8(80), bytes32(uint256(1))));
@@ -445,6 +455,8 @@ contract ABBCoreTest is Test {
         vm.prank(operator);
         core.submitWork(taskId, bytes32("sub"));
 
+        _simulateVRFCallback();
+
         // Quick commit-reveal with all validators scoring 80
         for (uint256 i; i < 5; i++) {
             bytes32 hash = keccak256(abi.encodePacked(taskId, uint8(80), bytes32(uint256(i + 1))));
@@ -465,6 +477,14 @@ contract ABBCoreTest is Test {
         assertEq(bountyEscrow.claimableETH(operator), expectedAgent);
         assertEq(bountyEscrow.claimableETH(feeRecipient), expectedFee);
     }
+
+    // --- Helper: simulate VRF callback with deterministic randomness ---
+    function _simulateVRFCallback() internal {
+        uint256 reqId = mockVRF.lastRequestId();
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = uint256(keccak256(abi.encodePacked("test-seed", reqId)));
+        mockVRF.fulfillRandomWords(address(validatorPool), reqId, randomWords);
+    }
 }
 
 /// @notice Invariant test: escrow solvency
@@ -482,7 +502,8 @@ contract EscrowSolvencyInvariant is Test {
         vm.startPrank(owner);
         taskRegistry = new TaskRegistry(owner);
         bountyEscrow = new BountyEscrow(owner, feeRecipient, 500);
-        validatorPool = new ValidatorPool(owner);
+        MockVRFCoordinator mockVRF = new MockVRFCoordinator();
+        validatorPool = new ValidatorPool(owner, address(mockVRF), 0, bytes32(0));
         agentRegistry = new AgentRegistry(owner);
         core = new ABBCore(
             owner, address(taskRegistry), address(bountyEscrow), address(validatorPool), address(agentRegistry)

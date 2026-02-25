@@ -168,11 +168,11 @@ This ensures no validator can see others' scores before committing their own.
 
 | Contract | Address |
 |----------|---------|
-| ABBCore | `0x8Ab04d61b716E8f75BDE01BD2603Fd1709F0aE6e` |
-| AgentRegistry | `0x6e8Ca1B73Bc5E6BC0DCFEF7Fcf56A8b22c775025` |
-| TaskRegistry | `0x2801cFE10BdD5bBfbb974b8A624F118b4F508Be9` |
-| BountyEscrow | `0x5e26A6cb29AF7598F5bf2B844fE3d0FC0fd3977C` |
-| ValidatorPool | `0xe19A42F99a6BA181ED86E59BB3beA48A2475E6F7` |
+| ABBCore | `0x86A5a8c315f27220Db276EeB2B1CBDfacAE83Af4` |
+| AgentRegistry | `0x137aEbf87F5D5c6FA0060D65f6b1D93d4040b5A8` |
+| TaskRegistry | `0x0e2C80F6BcDC99Ee1dCf59eA78068c865F76849F` |
+| BountyEscrow | `0x278743Be679DA67b54F1fc57472864d26Ed02530` |
+| ValidatorPool | `0x32eBb10C23D9d9Ab9454a8dc12f98b26b4c11Eb5` |
 
 ## License
 
