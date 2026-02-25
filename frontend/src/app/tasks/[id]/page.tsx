@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { fetchTask } from "@/lib/api";
+import { abbCoreConfig } from "@/lib/contracts";
 import { CATEGORIES, type Task } from "@/lib/mock-data";
 import { ArrowLeft, Clock, Users, CheckCircle, Circle, Loader2 } from "lucide-react";
 
@@ -46,9 +50,41 @@ function getTimelineIndex(status: string) {
 export default function TaskDetailPage() {
   const params = useParams();
   const id = parseInt(params.id as string);
+  const { isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agentId, setAgentId] = useState("");
+  const [claimError, setClaimError] = useState<string | null>(null);
+
+  const { data: claimTxHash, writeContract: writeClaim, isPending: isClaiming, error: claimWriteError } = useWriteContract();
+  const { isLoading: isClaimConfirming, isSuccess: isClaimConfirmed } = useWaitForTransactionReceipt({ hash: claimTxHash });
+
+  useEffect(() => {
+    if (claimWriteError) setClaimError(claimWriteError.message || "Claim failed");
+  }, [claimWriteError]);
+
+  useEffect(() => {
+    if (isClaimConfirmed) {
+      // Refresh task data
+      (async () => {
+        const { task: t } = await fetchTask(id);
+        if (t) setTask(t);
+      })();
+    }
+  }, [isClaimConfirmed, id]);
+
+  const handleClaim = () => {
+    if (!isConnected) { openConnectModal?.(); return; }
+    if (!agentId) { setClaimError("Enter your Agent ID"); return; }
+    setClaimError(null);
+    writeClaim({
+      ...abbCoreConfig,
+      functionName: 'claimTask',
+      args: [BigInt(id), BigInt(agentId)],
+    });
+  };
 
   useEffect(() => {
     if (isNaN(id)) { setError("Invalid task ID"); setLoading(false); return; }
@@ -172,9 +208,28 @@ export default function TaskDetailPage() {
                 <div className="text-sm text-muted-foreground">≈ ${task.bountyUSD.toLocaleString()}</div>
               </div>
               {task.status === "open" && (
-                <Button className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white">
-                  Claim This Task
-                </Button>
+                <div className="mt-6 space-y-3">
+                  <Input
+                    type="number"
+                    placeholder="Your Agent ID"
+                    value={agentId}
+                    onChange={(e) => setAgentId(e.target.value)}
+                    className="font-mono"
+                  />
+                  <Button
+                    onClick={handleClaim}
+                    disabled={isClaiming || isClaimConfirming}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    {isClaiming || isClaimConfirming ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {isClaimConfirming ? "Confirming..." : "Claiming..."}</>
+                    ) : (
+                      "Claim This Task"
+                    )}
+                  </Button>
+                  {claimError && <p className="text-xs text-red-400">{claimError}</p>}
+                  {isClaimConfirmed && <p className="text-xs text-emerald-400">Task claimed successfully!</p>}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { CATEGORIES } from "@/lib/mock-data";
-import { registerAgent } from "@/lib/api";
+import { agentRegistryConfig } from "@/lib/contracts";
 import { Bot, ArrowRight, Check, Loader2 } from "lucide-react";
 import { keccak256, toBytes } from "viem";
 
@@ -22,8 +22,20 @@ export default function RegisterPage() {
   const [caps, setCaps] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { data: txHash, writeContract, isPending: isWriting, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const submitting = isWriting || isConfirming;
+
+  useEffect(() => {
+    if (writeError) setError(writeError.message || "Registration failed");
+  }, [writeError]);
+
+  useEffect(() => {
+    if (isConfirmed) router.push("/dashboard");
+  }, [isConfirmed, router]);
 
   const toggleCap = (c: string) => {
     setCaps((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]);
@@ -34,17 +46,17 @@ export default function RegisterPage() {
       openConnectModal?.();
       return;
     }
-    setSubmitting(true);
     setError(null);
     try {
       const metadata = JSON.stringify({ name, description, capabilities: caps });
       const metadataHash = keccak256(toBytes(metadata));
-      await registerAgent({ metadataHash });
-      router.push("/dashboard");
+      writeContract({
+        ...agentRegistryConfig,
+        functionName: 'registerAgent',
+        args: [metadataHash],
+      });
     } catch (e: any) {
       setError(e.message || "Registration failed");
-    } finally {
-      setSubmitting(false);
     }
   };
 

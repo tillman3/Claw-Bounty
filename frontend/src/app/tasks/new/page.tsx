@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,17 +12,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORIES } from "@/lib/mock-data";
-import { createTask } from "@/lib/api";
+import { abbCoreConfig } from "@/lib/contracts";
 import { ArrowLeft, ArrowRight, Check, Wallet, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { keccak256, toBytes } from "viem";
+import { keccak256, toBytes, parseEther } from "viem";
 
 export default function CreateTaskPage() {
   const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "",
@@ -32,6 +31,19 @@ export default function CreateTaskPage() {
     bountyETH: "",
   });
 
+  const { data: txHash, writeContract, isPending: isWriting, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash: txHash });
+
+  const submitting = isWriting || isConfirming;
+
+  useEffect(() => {
+    if (writeError) setError(writeError.message || "Transaction failed");
+  }, [writeError]);
+
+  useEffect(() => {
+    if (isConfirmed) router.push("/tasks");
+  }, [isConfirmed, router]);
+
   const bountyUSD = form.bountyETH ? (parseFloat(form.bountyETH) * 2500).toFixed(0) : "0";
 
   const handleSubmit = async () => {
@@ -39,24 +51,20 @@ export default function CreateTaskPage() {
       openConnectModal?.();
       return;
     }
-    setSubmitting(true);
     setError(null);
     try {
       const descText = JSON.stringify({ title: form.title, description: form.description, category: form.category });
       const descriptionHash = keccak256(toBytes(descText));
-      const deadlineUnix = Math.floor(new Date(form.deadline).getTime() / 1000);
+      const deadlineUnix = BigInt(Math.floor(new Date(form.deadline).getTime() / 1000));
 
-      const result = await createTask({
-        descriptionHash,
-        deadline: deadlineUnix,
-        value: form.bountyETH,
+      writeContract({
+        ...abbCoreConfig,
+        functionName: 'createTaskETH',
+        args: [descriptionHash, deadlineUnix],
+        value: parseEther(form.bountyETH),
       });
-
-      router.push(`/tasks${result.taskId ? `/${result.taskId}` : ""}`);
     } catch (e: any) {
       setError(e.message || "Failed to create task");
-    } finally {
-      setSubmitting(false);
     }
   };
 

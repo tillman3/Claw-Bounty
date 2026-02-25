@@ -169,6 +169,7 @@ export async function fetchTask(id: number): Promise<{ task: Task | null; demo: 
   }
 }
 
+/** @deprecated Use wagmi useWriteContract with ABBCore.createTaskETH() instead */
 export async function createTask(body: {
   descriptionHash: string;
   deadline: number;
@@ -197,6 +198,7 @@ export async function fetchAgentsByAddress(address: string): Promise<{ agents: A
   }
 }
 
+/** @deprecated Use wagmi useWriteContract with AgentRegistry.registerAgent() instead */
 export async function registerAgent(body: {
   metadataHash: string;
 }): Promise<{ txHash: string; agentId: number | null; operator: string }> {
