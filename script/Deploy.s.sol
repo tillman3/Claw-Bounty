@@ -90,5 +90,4 @@ contract Deploy is Script {
         console.log("ValidatorPool:", address(validatorPool));
         console.log("ABBCore (main entry point):", address(core));
     }
-
 }

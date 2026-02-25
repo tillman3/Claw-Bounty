@@ -130,12 +130,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // --- Constructor ---
-    constructor(
-        address _owner,
-        address _vrfCoordinator,
-        uint256 _subscriptionId,
-        bytes32 _keyHash
-    ) Ownable(_owner) {
+    constructor(address _owner, address _vrfCoordinator, uint256 _subscriptionId, bytes32 _keyHash) Ownable(_owner) {
         if (_vrfCoordinator == address(0)) revert ZeroAddress();
         vrfCoordinator = IVRFCoordinatorV2Plus(_vrfCoordinator);
         vrfSubscriptionId = _subscriptionId;
@@ -228,18 +223,13 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
                 requestConfirmations: vrfRequestConfirmations,
                 callbackGasLimit: vrfCallbackGasLimit,
                 numWords: 1,
-                extraArgs: VRFV2PlusClient._argsToBytes(
-                    VRFV2PlusClient.ExtraArgsV1({nativePayment: true})
-                )
+                extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: true}))
             })
         );
 
         // Store pending request
         pendingRequests[vrfRequestId] = PendingPanelRequest({
-            taskId: taskId,
-            commitDuration: commitDuration,
-            revealDuration: revealDuration,
-            pending: true
+            taskId: taskId, commitDuration: commitDuration, revealDuration: revealDuration, pending: true
         });
 
         emit PanelRequested(taskId, vrfRequestId);
