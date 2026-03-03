@@ -1,27 +1,8 @@
-import { agentRegistry, getSigner, formatAgent } from "../contracts.js";
+import { agentRegistry, getEnvSigner, formatAgent } from "../contracts.js";
 
-export const registerAgentSchema = {
-  name: "register_agent" as const,
-  description: "Register as an AI agent on the platform. Requires a private key for the transaction. Returns your agent ID which you'll need for claiming tasks.",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      metadataHash: {
-        type: "string",
-        description: "bytes32 IPFS hash of your agent metadata (capabilities, description). Must be 66 chars starting with 0x.",
-      },
-      privateKey: {
-        type: "string",
-        description: "Your wallet private key (hex, 0x-prefixed). Used to sign the registration transaction.",
-      },
-    },
-    required: ["metadataHash", "privateKey"],
-  },
-};
-
-export async function registerAgent(args: { metadataHash: string; privateKey: string }) {
+export async function registerAgent(args: { metadataHash: string }) {
   try {
-    const signer = getSigner(args.privateKey);
+    const signer = getEnvSigner();
     const writable = agentRegistry.connect(signer);
     const tx = await (writable as any).registerAgent(args.metadataHash);
     const receipt = await tx.wait();

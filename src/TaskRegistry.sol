@@ -200,6 +200,20 @@ contract TaskRegistry is Ownable2Step, Pausable {
         emit TaskCancelled(taskId, cancelledBy);
     }
 
+    /// @notice M-6 FIX: Reclaim an expired claimed task (no submission made past deadline)
+    /// @param taskId The task to reclaim
+    /// @dev Resets task to Open, clears agent assignment. Only callable by authorized (ABBCore).
+    function reclaimExpiredTask(uint256 taskId) external onlyAuthorized inState(taskId, TaskState.Claimed) {
+        Task storage task = _tasks[taskId];
+        if (block.timestamp < task.deadline) revert InvalidStateTransition();
+
+        task.state = TaskState.Open;
+        task.assignedAgent = 0;
+        task.claimedAt = 0;
+
+        emit TaskCancelled(taskId, task.poster); // reuse event for unclaim
+    }
+
     /// @notice Set authorized caller
     function setAuthorizedCaller(address caller, bool authorized) external onlyOwner {
         if (caller == address(0)) revert ZeroAddress();

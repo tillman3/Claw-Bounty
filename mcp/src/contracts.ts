@@ -9,8 +9,11 @@ import BountyEscrowABI from "./abis/BountyEscrow.json" with { type: "json" };
 
 export const provider = new JsonRpcProvider(config.rpcUrl);
 
-export function getSigner(privateKey: string): Wallet {
-  return new Wallet(privateKey, provider);
+// C-3 remediation: use environment-based signer only, never accept keys from tool calls
+export function getEnvSigner(): Wallet {
+  const key = process.env.SIGNER_PRIVATE_KEY;
+  if (!key) throw new Error("SIGNER_PRIVATE_KEY not set in environment. Configure it before using write tools.");
+  return new Wallet(key, provider);
 }
 
 // Read-only contract instances

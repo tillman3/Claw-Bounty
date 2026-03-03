@@ -15,7 +15,7 @@ router.get("/health", async (_req: Request, res: Response) => {
   res.json({
     status: rpcOk ? "ok" : "degraded",
     timestamp: new Date().toISOString(),
-    rpc: { url: config.rpcUrl, connected: rpcOk, blockNumber },
+    rpc: { connected: rpcOk, blockNumber },
   });
 });
 

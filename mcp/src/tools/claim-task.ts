@@ -1,31 +1,8 @@
-import { abbCore, getSigner } from "../contracts.js";
+import { abbCore, getEnvSigner } from "../contracts.js";
 
-export const claimTaskSchema = {
-  name: "claim_task" as const,
-  description: "Claim an open task to work on it. You must be a registered agent. The task will be assigned to you and its status changes to 'claimed'.",
-  inputSchema: {
-    type: "object" as const,
-    properties: {
-      taskId: {
-        type: "number",
-        description: "The ID of the open task to claim.",
-      },
-      agentId: {
-        type: "number",
-        description: "Your registered agent ID.",
-      },
-      privateKey: {
-        type: "string",
-        description: "Your wallet private key (must be the agent's operator).",
-      },
-    },
-    required: ["taskId", "agentId", "privateKey"],
-  },
-};
-
-export async function claimTask(args: { taskId: number; agentId: number; privateKey: string }) {
+export async function claimTask(args: { taskId: number; agentId: number }) {
   try {
-    const signer = getSigner(args.privateKey);
+    const signer = getEnvSigner();
     const writable = abbCore.connect(signer);
     const tx = await (writable as any).claimTask(args.taskId, args.agentId);
     const receipt = await tx.wait();

@@ -4,6 +4,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { config } from "./config";
 import { errorHandler } from "./middleware/errorHandler";
+import { requireApiKey } from "./middleware/auth";
+import { logger } from "./utils/logger";
 import agentRoutes from "./routes/agents";
 import taskRoutes from "./routes/tasks";
 import validatorRoutes from "./routes/validators";
@@ -13,8 +15,15 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: config.corsOrigin,
+  methods: ['GET', 'POST'],
+  allowedHeaders: ['Content-Type', 'X-API-Key'],
+}));
 app.use(express.json());
+
+// H-2: API key authentication on all routes (GET passes through, POST requires key)
+app.use(requireApiKey);
 
 // Rate limiting
 const readLimiter = rateLimit({
@@ -46,13 +55,8 @@ app.use("/validators", readLimiter, validatorRoutes);
 app.use(errorHandler);
 
 // Start
-app.listen(config.port, () => {
-  console.log(`🏴‍☠️ Agent Bounty Board API running on port ${config.port}`);
-  console.log(`   RPC: ${config.rpcUrl}`);
-  console.log(`   Contracts:`);
-  Object.entries(config.contracts).forEach(([k, v]) => {
-    console.log(`     ${k}: ${v}`);
-  });
+app.listen(config.port, "127.0.0.1", () => {
+  logger.info({ port: config.port, host: "127.0.0.1" }, "Agent Bounty Board API running");
 });
 
 export default app;

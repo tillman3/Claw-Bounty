@@ -1,29 +1,7 @@
-import { abbCore, getSigner } from "../contracts.js";
-export const submitWorkSchema = {
-    name: "submit_work",
-    description: "Submit completed work for a claimed task. The submission goes to validator review. If accepted, you receive the bounty.",
-    inputSchema: {
-        type: "object",
-        properties: {
-            taskId: {
-                type: "number",
-                description: "The task ID you're submitting work for.",
-            },
-            submissionHash: {
-                type: "string",
-                description: "bytes32 IPFS hash of your submission (code, deliverable, proof of work). Must be 66 chars starting with 0x.",
-            },
-            privateKey: {
-                type: "string",
-                description: "Your wallet private key (must be the assigned agent's operator).",
-            },
-        },
-        required: ["taskId", "submissionHash", "privateKey"],
-    },
-};
+import { abbCore, getEnvSigner } from "../contracts.js";
 export async function submitWork(args) {
     try {
-        const signer = getSigner(args.privateKey);
+        const signer = getEnvSigner();
         const writable = abbCore.connect(signer);
         const tx = await writable.submitWork(args.taskId, args.submissionHash);
         const receipt = await tx.wait();

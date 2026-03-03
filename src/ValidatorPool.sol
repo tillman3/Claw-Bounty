@@ -78,6 +78,9 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(uint256 => bool) public panelSelected; // taskId => whether panel has been selected
     mapping(uint256 => uint256) public taskVRFRequest; // taskId => vrfRequestId (for timeout cancellation)
 
+    // M-4 FIX: Treasury for slashed funds
+    address public treasury;
+
     // Authorized callers (ABBCore)
     mapping(address => bool) public authorizedCallers;
 
@@ -98,6 +101,8 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     event VRFConfigUpdated(bytes32 keyHash, uint256 subscriptionId, uint16 confirmations, uint32 callbackGasLimit);
     event PanelSelectionFailed(uint256 indexed taskId, uint256 selected, uint256 required);
     event VRFRequestCancelled(uint256 indexed taskId, uint256 indexed vrfRequestId);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
+    event SlashedFundsTransferred(address indexed treasury, uint256 amount);
 
     // --- Errors ---
     error ZeroAddress();
@@ -441,7 +446,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
         emit RoundFinalized(taskId, accepted, medianScore);
     }
 
-    /// @notice Slash a validator's stake
+    /// @notice Slash a validator's stake and send to treasury (M-4 fix)
     function slash(address validator, uint256 amount, string calldata reason) external onlyAuthorized {
         Validator storage v = validators[validator];
         if (v.registeredAt == 0) revert NotValidator();
@@ -455,7 +460,22 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
             emit ValidatorDeactivated(validator);
         }
 
+        // M-4: Transfer slashed funds to treasury instead of leaving locked
+        if (slashAmount > 0 && treasury != address(0)) {
+            (bool ok,) = treasury.call{value: slashAmount}("");
+            if (!ok) revert TransferFailed();
+            emit SlashedFundsTransferred(treasury, slashAmount);
+        }
+
         emit ValidatorSlashed(validator, slashAmount, reason);
+    }
+
+    /// @notice Set the treasury address for slashed funds (M-4)
+    function setTreasury(address _treasury) external onlyOwner {
+        if (_treasury == address(0)) revert ZeroAddress();
+        address old = treasury;
+        treasury = _treasury;
+        emit TreasuryUpdated(old, _treasury);
     }
 
     /// @notice Set authorized caller

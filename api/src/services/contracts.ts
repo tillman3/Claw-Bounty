@@ -1,4 +1,4 @@
-import { ethers, Contract, JsonRpcProvider, Wallet, Signer } from "ethers";
+import { ethers, Contract, JsonRpcProvider } from "ethers";
 import { config } from "../config";
 
 import ABBCoreABI from "../abis/ABBCore.json";
@@ -7,31 +7,15 @@ import TaskRegistryABI from "../abis/TaskRegistry.json";
 import ValidatorPoolABI from "../abis/ValidatorPool.json";
 import BountyEscrowABI from "../abis/BountyEscrow.json";
 
-// Provider
+// Provider (read-only)
 export const provider = new JsonRpcProvider(config.rpcUrl);
 
-// Default signer (testnet convenience)
-export function getDefaultSigner(): Wallet | null {
-  if (!config.signerKey) return null;
-  return new Wallet(config.signerKey, provider);
-}
-
-// Get signer from private key
-export function getSigner(privateKey: string): Wallet {
-  return new Wallet(privateKey, provider);
-}
-
-// Read-only contracts
+// Read-only contracts — C-2 remediation: no more signers in API
 export const abbCore = new Contract(config.contracts.abbCore, ABBCoreABI, provider);
 export const agentRegistry = new Contract(config.contracts.agentRegistry, AgentRegistryABI, provider);
 export const taskRegistry = new Contract(config.contracts.taskRegistry, TaskRegistryABI, provider);
 export const validatorPool = new Contract(config.contracts.validatorPool, ValidatorPoolABI, provider);
 export const bountyEscrow = new Contract(config.contracts.bountyEscrow, BountyEscrowABI, provider);
-
-// Get writable contract instance
-export function getWritableContract(contract: Contract, signer: Signer): Contract {
-  return contract.connect(signer) as Contract;
-}
 
 // Task state enum mapping
 export const TaskState = [

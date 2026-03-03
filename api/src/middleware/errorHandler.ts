@@ -11,7 +11,8 @@ export class ApiError extends Error {
 }
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  console.error(`[ERROR] ${err.message}`, err.stack?.split("\n")[1]?.trim());
+  const { logger } = require("../utils/logger");
+  logger.error({ err: err.message, stack: err.stack?.split("\n")[1]?.trim() }, "Request error");
 
   if (err instanceof ApiError) {
     res.status(err.statusCode).json({ error: err.message });

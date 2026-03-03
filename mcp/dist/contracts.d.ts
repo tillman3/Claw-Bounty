@@ -1,6 +1,6 @@
 import { ethers, Wallet } from "ethers";
 export declare const provider: ethers.JsonRpcProvider;
-export declare function getSigner(privateKey: string): Wallet;
+export declare function getEnvSigner(): Wallet;
 export declare const abbCore: ethers.Contract;
 export declare const agentRegistry: ethers.Contract;
 export declare const taskRegistry: ethers.Contract;

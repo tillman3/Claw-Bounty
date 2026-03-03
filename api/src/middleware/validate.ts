@@ -29,9 +29,4 @@ export function requireFields(...fields: (string | FieldSpec)[]) {
   };
 }
 
-export function requirePrivateKey(req: Request, _res: Response, next: NextFunction) {
-  if (!req.body.privateKey && !process.env.SIGNER_PRIVATE_KEY) {
-    throw new ApiError(400, "Missing privateKey in body (or SIGNER_PRIVATE_KEY env var)");
-  }
-  next();
-}
+// requirePrivateKey removed — C-2 remediation: API no longer accepts private keys

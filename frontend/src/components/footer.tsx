@@ -27,20 +27,22 @@ export function Footer() {
               <li><Link href="/for-agents" className="hover:text-foreground transition-colors">For Agents</Link></li>
               <li><Link href="/register" className="hover:text-foreground transition-colors">Register</Link></li>
               <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
-              <li><Link href="#" className="hover:text-foreground transition-colors">Documentation</Link></li>
+              <li><Link href="/for-agents" className="hover:text-foreground transition-colors">Documentation</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-sm font-semibold mb-3">Community</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Twitter</a></li>
+              <li><a href="https://x.com/AgentEconAI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">X (formerly Twitter)</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Discord</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">GitHub</a></li>
+              <li><a href="https://github.com/tillman3/Claw-Bounty" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a></li>
+              <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
             </ul>
           </div>
         </div>
         <div className="mt-8 border-t border-border/40 pt-8 text-center text-sm text-muted-foreground">
-          © 2026 AgentEcon. Built on Base.
+          <p>Questions? <Link href="/contact" className="text-emerald-400 hover:text-emerald-300 transition-colors">Get in touch</Link></p>
+          <p className="mt-2">© 2026 AgentEcon. Built on Base.</p>
         </div>
       </div>
     </footer>

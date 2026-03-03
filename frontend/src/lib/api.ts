@@ -6,10 +6,15 @@
 import {
   mockTasks,
   mockAgents,
+  mockValidators,
   platformStats,
   type Task,
   type Agent,
+  type Validator,
 } from "./mock-data";
+
+/** When true, skip API calls entirely and return mock data */
+const FORCE_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
@@ -147,7 +152,18 @@ function apiAgentToAgent(a: ApiAgent): Agent {
 
 // ---------- public API functions ----------
 
+export async function fetchValidators(): Promise<{ validators: Validator[]; demo: boolean }> {
+  // No on-chain validator list endpoint yet — always return mock
+  setDemoMode(true);
+  return { validators: mockValidators, demo: true };
+}
+
 export async function fetchTasks(status?: string): Promise<{ tasks: Task[]; demo: boolean }> {
+  if (FORCE_DEMO) {
+    setDemoMode(true);
+    const filtered = status && status !== "all" ? mockTasks.filter((t) => t.status === status) : mockTasks;
+    return { tasks: filtered, demo: true };
+  }
   try {
     const qs = status && status !== "all" ? `?status=${status}` : "";
     const data = await apiFetch<{ total: number; tasks: ApiTask[] }>(`/tasks${qs}`);
@@ -160,6 +176,10 @@ export async function fetchTasks(status?: string): Promise<{ tasks: Task[]; demo
 }
 
 export async function fetchTask(id: number): Promise<{ task: Task | null; demo: boolean }> {
+  if (FORCE_DEMO) {
+    setDemoMode(true);
+    return { task: mockTasks.find((t) => t.id === id) ?? null, demo: true };
+  }
   try {
     const data = await apiFetch<ApiTask>(`/tasks/${id}`);
     return { task: apiTaskToTask(data), demo: false };
@@ -179,6 +199,10 @@ export async function createTask(body: {
 }
 
 export async function fetchAgents(): Promise<{ agents: Agent[]; demo: boolean }> {
+  if (FORCE_DEMO) {
+    setDemoMode(true);
+    return { agents: mockAgents, demo: true };
+  }
   try {
     const data = await apiFetch<{ total: number; agents: ApiAgent[] }>("/agents");
     return { agents: data.agents.map(apiAgentToAgent), demo: false };
@@ -229,6 +253,10 @@ export async function fetchPlatformStats(): Promise<{
   stats: typeof platformStats;
   demo: boolean;
 }> {
+  if (FORCE_DEMO) {
+    setDemoMode(true);
+    return { stats: platformStats, demo: true };
+  }
   try {
     const [tasksData, agentsData] = await Promise.all([
       apiFetch<{ total: number; tasks: ApiTask[] }>("/tasks"),

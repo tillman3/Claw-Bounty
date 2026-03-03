@@ -175,12 +175,10 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
             TaskRegistry.Task memory task = taskRegistry.getTask(taskId);
             agentRegistry.recordOutcome(agentId, true, task.bountyAmount);
         } else {
-            // H-3 FIX: Rejected — start dispute window instead of instant refund
+            // Rejected — start dispute window, do NOT record outcome yet (H-5 fix)
             // Agent can call raiseDispute() within DISPUTE_WINDOW
+            // recordOutcome is deferred to claimRefundAfterRejection() or resolveDispute()
             rejectedAt[taskId] = uint64(block.timestamp);
-
-            uint256 agentId = taskRegistry.getAssignedAgent(taskId);
-            agentRegistry.recordOutcome(agentId, false, 0);
         }
 
         emit ReviewFinalized(taskId, accepted, medianScore);
@@ -195,6 +193,10 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
 
         // Clear rejection state
         delete rejectedAt[taskId];
+
+        // H-5 fix: Record the failure outcome now that dispute window expired
+        uint256 agentId = taskRegistry.getAssignedAgent(taskId);
+        agentRegistry.recordOutcome(agentId, false, 0);
 
         // Now process the refund
         taskRegistry.disputeTask(taskId, address(this));
@@ -249,6 +251,15 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
         }
 
         emit DisputeResolved(taskId, accepted);
+    }
+
+    /// @notice M-6 FIX: Allow poster to reclaim a task if deadline passed with no submission
+    /// @param taskId The expired task to reclaim
+    function reclaimExpiredTask(uint256 taskId) external whenNotPaused {
+        address poster = taskRegistry.getTaskPoster(taskId);
+        if (poster != msg.sender) revert NotPoster();
+
+        taskRegistry.reclaimExpiredTask(taskId);
     }
 
     // --- Config ---

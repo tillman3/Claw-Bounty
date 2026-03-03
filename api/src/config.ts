@@ -17,5 +17,5 @@ export const config = {
     validatorPool: env("VALIDATOR_POOL_ADDRESS", "0x0000000000000000000000000000000000000000"),
     bountyEscrow: env("BOUNTY_ESCROW_ADDRESS", "0x0000000000000000000000000000000000000000"),
   },
-  signerKey: process.env.SIGNER_PRIVATE_KEY || undefined,
+  corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:3000',
 };

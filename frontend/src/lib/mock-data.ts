@@ -242,8 +242,8 @@ export const mockTasks: Task[] = [
   },
   {
     id: 13,
-    title: "Create viral Twitter thread series on AI agents",
-    description: "Write 5 Twitter thread series (8-12 tweets each) about AI agents in crypto. Topics: what are AI agents, agent economies, bounty systems, autonomous trading, and the future of work. Engaging, meme-worthy, with hooks.",
+    title: "Create viral X thread series on AI agents",
+    description: "Write 5 X thread series (8-12 posts each) about AI agents in crypto. Topics: what are AI agents, agent economies, bounty systems, autonomous trading, and the future of work. Engaging, meme-worthy, with hooks.",
     category: "content",
     status: "open",
     bountyETH: 0.2,
@@ -346,9 +346,43 @@ export const mockAgents: Agent[] = [
   },
 ];
 
+export interface Validator {
+  id: number;
+  name: string;
+  address: string;
+  stakeETH: number;
+  validationsCompleted: number;
+  accuracyRate: number;
+  active: boolean;
+  stakedSince: string;
+}
+
+export const mockValidators: Validator[] = [
+  {
+    id: 1, name: "TruthNode-Prime", address: "0xVal1...aaa",
+    stakeETH: 5.0, validationsCompleted: 142, accuracyRate: 97,
+    active: true, stakedSince: "2025-10-01",
+  },
+  {
+    id: 2, name: "ConsensusGuard", address: "0xVal2...bbb",
+    stakeETH: 3.2, validationsCompleted: 89, accuracyRate: 94,
+    active: true, stakedSince: "2025-11-15",
+  },
+  {
+    id: 3, name: "VerifyBot-X", address: "0xVal3...ccc",
+    stakeETH: 8.0, validationsCompleted: 203, accuracyRate: 99,
+    active: true, stakedSince: "2025-09-20",
+  },
+  {
+    id: 4, name: "OracleValidator", address: "0xVal4...ddd",
+    stakeETH: 2.5, validationsCompleted: 51, accuracyRate: 91,
+    active: true, stakedSince: "2026-01-10",
+  },
+];
+
 export const platformStats = {
-  tasksCompleted: 1247,
-  agentsRegistered: 412,
-  ethPaidOut: 312.5,
+  tasksCompleted: 47,
+  agentsRegistered: 12,
+  ethPaidOut: 8.5,
   activeTasksNow: 89,
 };

@@ -6,8 +6,12 @@ import TaskRegistryABI from "./abis/TaskRegistry.json" with { type: "json" };
 import ValidatorPoolABI from "./abis/ValidatorPool.json" with { type: "json" };
 import BountyEscrowABI from "./abis/BountyEscrow.json" with { type: "json" };
 export const provider = new JsonRpcProvider(config.rpcUrl);
-export function getSigner(privateKey) {
-    return new Wallet(privateKey, provider);
+// C-3 remediation: use environment-based signer only, never accept keys from tool calls
+export function getEnvSigner() {
+    const key = process.env.SIGNER_PRIVATE_KEY;
+    if (!key)
+        throw new Error("SIGNER_PRIVATE_KEY not set in environment. Configure it before using write tools.");
+    return new Wallet(key, provider);
 }
 // Read-only contract instances
 export const abbCore = new Contract(config.contracts.abbCore, ABBCoreABI, provider);

@@ -39,32 +39,29 @@ server.tool(
 
 server.tool(
   "register_agent",
-  "Register as an AI agent on the platform. Requires a private key for the transaction. Returns your agent ID.",
+  "Register as an AI agent on the platform. Uses the server's configured signer. Returns your agent ID.",
   {
     metadataHash: z.string().describe("bytes32 IPFS hash of your agent metadata. Must be 66 chars starting with 0x."),
-    privateKey: z.string().describe("Your wallet private key (hex, 0x-prefixed)."),
   },
   async (args) => registerAgent(args),
 );
 
 server.tool(
   "claim_task",
-  "Claim an open task to work on it. You must be a registered agent.",
+  "Claim an open task to work on it. You must be a registered agent. Uses the server's configured signer.",
   {
     taskId: z.number().describe("The ID of the open task to claim."),
     agentId: z.number().describe("Your registered agent ID."),
-    privateKey: z.string().describe("Your wallet private key (must be the agent's operator)."),
   },
   async (args) => claimTask(args),
 );
 
 server.tool(
   "submit_work",
-  "Submit completed work for a claimed task. Goes to validator review. If accepted, you receive the bounty.",
+  "Submit completed work for a claimed task. Goes to validator review. If accepted, you receive the bounty. Uses the server's configured signer.",
   {
     taskId: z.number().describe("The task ID you're submitting work for."),
     submissionHash: z.string().describe("bytes32 IPFS hash of your submission. Must be 66 chars starting with 0x."),
-    privateKey: z.string().describe("Your wallet private key (must be the assigned agent's operator)."),
   },
   async (args) => submitWork(args),
 );
