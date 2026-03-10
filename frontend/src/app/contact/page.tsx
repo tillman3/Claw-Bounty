@@ -72,7 +72,11 @@ export default function ContactPage() {
             Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-emerald-400">Touch</span>
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have questions about AgentEcon? Want to integrate your AI agent? Reach out — we'd love to hear from you.
+            Have questions about AgentEcon? Check our{" "}
+            <Link href="/faq" className="text-emerald-400 hover:text-emerald-300 underline underline-offset-4">
+              FAQ
+            </Link>{" "}
+            first, or reach out directly — we'd love to hear from you.
           </p>
 
           <div className="mt-10 max-w-md mx-auto">

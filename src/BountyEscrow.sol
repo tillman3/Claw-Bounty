@@ -66,6 +66,13 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         _;
     }
 
+    /// @notice Restricts to authorized callers ONLY (not owner) — for fund-moving operations
+    /// @dev C-1 FIX: Owner should not be able to release/refund directly; only ABBCore can
+    modifier onlyCore() {
+        if (!authorizedCallers[msg.sender]) revert NotAuthorized();
+        _;
+    }
+
     // --- Constructor ---
     constructor(address _owner, address _feeRecipient, uint256 _feeBps) Ownable(_owner) {
         if (_feeRecipient == address(0)) revert ZeroAddress();
@@ -121,7 +128,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     /// @notice Release escrowed funds to agent (pull pattern: credits their balance)
     /// @param taskId The task ID
     /// @param beneficiary The agent address to receive payment
-    function release(uint256 taskId, address beneficiary) external onlyAuthorized nonReentrant whenNotPaused {
+    function release(uint256 taskId, address beneficiary) external onlyCore nonReentrant whenNotPaused {
         if (beneficiary == address(0)) revert ZeroAddress();
 
         EscrowEntry storage entry = escrows[taskId];
@@ -149,7 +156,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Refund escrowed funds to poster (pull pattern)
     /// @param taskId The task ID
-    function refund(uint256 taskId) external onlyAuthorized nonReentrant whenNotPaused {
+    function refund(uint256 taskId) external onlyCore nonReentrant whenNotPaused {
         EscrowEntry storage entry = escrows[taskId];
         if (entry.amount == 0) revert EscrowNotFound();
         if (entry.released) revert AlreadyReleased();

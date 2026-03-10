@@ -36,6 +36,7 @@ export function Footer() {
               <li><a href="https://x.com/AgentEconAI" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">X (formerly Twitter)</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors">Discord</a></li>
               <li><a href="https://github.com/tillman3/Claw-Bounty" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a></li>
+              <li><Link href="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
               <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
             </ul>
           </div>

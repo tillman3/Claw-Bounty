@@ -254,12 +254,14 @@ contract ABBCore is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     /// @notice M-6 FIX: Allow poster to reclaim a task if deadline passed with no submission
+    /// @dev C-2 FIX: Now also refunds the escrowed bounty back to the poster
     /// @param taskId The expired task to reclaim
     function reclaimExpiredTask(uint256 taskId) external whenNotPaused {
         address poster = taskRegistry.getTaskPoster(taskId);
         if (poster != msg.sender) revert NotPoster();
 
         taskRegistry.reclaimExpiredTask(taskId);
+        bountyEscrow.refund(taskId);
     }
 
     // --- Config ---
