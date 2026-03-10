@@ -49,7 +49,7 @@ contract ValidatorPool is Ownable2Step, Pausable, ReentrancyGuard {
     }
 
     // --- Constants ---
-    uint256 public constant MIN_STAKE = 0.01 ether;
+    uint256 public constant MIN_STAKE = 0.1 ether; // H-1 FIX: increased from 0.01 to deter sybil attacks
     uint64 public constant UNSTAKE_COOLDOWN = 7 days;
     uint256 public constant MAX_REPUTATION = 10_000;
     uint256 public constant INITIAL_REPUTATION = 5_000;

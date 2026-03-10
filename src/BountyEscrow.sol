@@ -59,6 +59,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     error NotAuthorized();
     error TransferFailed();
     error NothingToWithdraw();
+    error EscrowExists();
 
     // --- Modifiers ---
     modifier onlyAuthorized() {
@@ -89,6 +90,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
     function depositETH(uint256 taskId, address depositor) external payable onlyAuthorized whenNotPaused {
         if (msg.value == 0) revert InvalidAmount();
         if (depositor == address(0)) revert ZeroAddress();
+        if (escrows[taskId].amount > 0) revert EscrowExists(); // L-2 FIX: prevent overwrite
 
         escrows[taskId] = EscrowEntry({
             depositor: depositor, paymentToken: address(0), amount: msg.value, released: false, refunded: false
@@ -111,6 +113,7 @@ contract BountyEscrow is Ownable2Step, Pausable, ReentrancyGuard {
         if (amount == 0) revert InvalidAmount();
         if (depositor == address(0)) revert ZeroAddress();
         if (token == address(0)) revert ZeroAddress();
+        if (escrows[taskId].amount > 0) revert EscrowExists(); // L-2 FIX: prevent overwrite
 
         // Handle fee-on-transfer tokens
         uint256 balBefore = IERC20(token).balanceOf(address(this));

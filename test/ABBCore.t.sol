@@ -325,7 +325,7 @@ contract ABBCoreTest is Test {
         vm.deal(newV, 1 ether);
         vm.prank(newV);
         vm.expectRevert(ValidatorPool.InsufficientStake.selector);
-        validatorPool.registerValidator{value: 0.001 ether}();
+        validatorPool.registerValidator{value: 0.01 ether}(); // Below MIN_STAKE (0.1 ETH)
     }
 
     function test_unstakeCooldown() public {

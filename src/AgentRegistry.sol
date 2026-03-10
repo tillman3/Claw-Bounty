@@ -67,17 +67,32 @@ contract AgentRegistry is Ownable2Step, Pausable {
     // --- External Functions ---
 
     /// @notice Register a new agent
+    /// @dev H-2 FIX: New agents inherit the lowest reputation of any existing agent
+    /// from the same operator, preventing reputation reset via re-registration.
     /// @param metadataHash IPFS hash of agent metadata
     /// @return agentId The newly created agent ID
     function registerAgent(bytes32 metadataHash) external whenNotPaused returns (uint256 agentId) {
         if (metadataHash == bytes32(0)) revert InvalidMetadata();
+
+        // H-2 FIX: Inherit lowest reputation from operator's existing agents
+        uint256 startingReputation = INITIAL_REPUTATION;
+        uint256[] storage existingAgents = operatorAgents[msg.sender];
+        for (uint256 i; i < existingAgents.length; i++) {
+            uint256 existingId = existingAgents[i];
+            if (agentExists[existingId]) {
+                uint256 existingRep = _agents[existingId].reputationScore;
+                if (existingRep < startingReputation) {
+                    startingReputation = existingRep;
+                }
+            }
+        }
 
         agentId = nextAgentId++;
         _agents[agentId] = Agent({
             id: agentId,
             operator: msg.sender,
             metadataHash: metadataHash,
-            reputationScore: INITIAL_REPUTATION,
+            reputationScore: startingReputation,
             tasksCompleted: 0,
             tasksFailed: 0,
             totalEarned: 0,
