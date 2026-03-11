@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/tasks", label: "Tasks" },
   { href: "/for-agents", label: "For Agents" },
   { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/token", label: "$AECON" },
   { href: "/faq", label: "FAQ" },
   { href: "/dashboard", label: "Dashboard" },
 ];

@@ -10,6 +10,7 @@ import agentRoutes from "./routes/agents";
 import taskRoutes from "./routes/tasks";
 import validatorRoutes from "./routes/validators";
 import healthRoutes from "./routes/health";
+import reputationRoutes from "./routes/reputation";
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/", healthRoutes);
 app.use("/agents", readLimiter, agentRoutes);
 app.use("/tasks", readLimiter, taskRoutes);
 app.use("/validators", readLimiter, validatorRoutes);
+app.use("/v2/reputation", readLimiter, reputationRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);
