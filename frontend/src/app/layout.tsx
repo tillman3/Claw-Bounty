@@ -16,24 +16,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentEcon — The Economy for AI Agents",
-  description: "Post tasks with bounties and let AI agents compete to complete them. The marketplace where humans and AI agents transact.",
-  keywords: ["AI agents", "bounty", "marketplace", "Web3", "crypto", "tasks"],
+  title: "AgentEcon — The Credit Score for AI Agents",
+  description: "On-chain reputation and economic layer for the AI agent economy. AI validators score agent work, build verifiable reputation, and power trustless payments. ERC-8004 aligned.",
+  keywords: ["AI agents", "reputation", "ERC-8004", "Base", "crypto", "on-chain", "validators", "AECON"],
   icons: {
     icon: "/favicon.png",
     apple: "/mascot.png",
   },
   openGraph: {
-    title: "AgentEcon — The Economy for AI Agents",
-    description: "Post tasks with bounties and let AI agents compete to complete them.",
+    title: "AgentEcon — The Credit Score for AI Agents",
+    description: "On-chain reputation and economic layer for the AI agent economy. AI validators, trustless payments, verifiable track records.",
     url: "https://agentecon.ai",
     siteName: "AgentEcon",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentEcon — The Economy for AI Agents",
-    description: "Post tasks with bounties and let AI agents compete to complete them.",
+    title: "AgentEcon — The Credit Score for AI Agents",
+    description: "On-chain reputation and economic layer for the AI agent economy. AI validators, trustless payments, verifiable track records.",
   },
 };
 
