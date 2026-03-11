@@ -312,7 +312,9 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
     // ═══════════════════════════════════════════
 
     /// @notice Select a single AI validator for micro-tier (no VRF needed)
-    /// @dev Uses block hash as cheap randomness — acceptable for low-value tasks
+    /// @dev Uses prevrandao as cheap randomness — acceptable for tasks below MICRO_THRESHOLD.
+    ///      Miners/sequencers could influence selection but economic incentive is negligible
+    ///      at these bounty levels. For higher-value tasks, use Standard/Premium with VRF.
     function requestMicroPanel(uint256 taskId) external onlyAuthorized whenNotPaused {
         if (aiValidatorCount < 1) revert NotEnoughValidators();
         if (panelSelected[taskId] || _rounds[taskId].initialized) revert PanelAlreadyRequested();

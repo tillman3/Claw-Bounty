@@ -154,10 +154,12 @@ contract ABBCoreV2 is Ownable2Step, Pausable, ReentrancyGuard {
             validatorPool.requestMicroPanel(taskId);
         } else if (tier == ValidatorPoolV2.ValidationTier.Standard) {
             // 3 validators via VRF, direct scoring
-            validatorPool.requestStandardPanel(taskId);
+            uint256 vrfReqId = validatorPool.requestStandardPanel(taskId);
+            (vrfReqId); // suppress unused warning — ID tracked in ValidatorPoolV2
         } else {
             // Premium: 5 validators, full commit-reveal
-            validatorPool.requestPremiumPanel(taskId, commitDuration, revealDuration);
+            uint256 vrfReqId = validatorPool.requestPremiumPanel(taskId, commitDuration, revealDuration);
+            (vrfReqId);
         }
 
         emit WorkSubmittedForReview(taskId, tier);
@@ -169,7 +171,8 @@ contract ABBCoreV2 is Ownable2Step, Pausable, ReentrancyGuard {
 
     function finalizeReview(uint256 taskId) external whenNotPaused nonReentrant {
         if (!validatorPool.isRoundFinalized(taskId)) {
-            validatorPool.finalizeRound(taskId);
+            (bool _accepted, uint8 _median) = validatorPool.finalizeRound(taskId);
+            (_accepted); (_median); // tracked via getRoundResult below
         }
 
         (bool accepted, uint8 medianScore) = validatorPool.getRoundResult(taskId);

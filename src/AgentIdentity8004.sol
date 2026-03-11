@@ -245,6 +245,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     // ═══════════════════════════════════════════
 
     function setLegacyRegistry(address _legacyRegistry) external onlyOwner {
+        if (_legacyRegistry == address(0)) revert ZeroAddress();
         legacyRegistry = _legacyRegistry;
     }
 

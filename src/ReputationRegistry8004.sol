@@ -16,7 +16,7 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
     //  State
     // ═══════════════════════════════════════════
 
-    AgentIdentity8004 public identityRegistry;
+    AgentIdentity8004 public immutable identityRegistry;
 
     struct Feedback {
         int128 value;
@@ -154,28 +154,6 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
         emit NewFeedback(agentId, clientAddress, idx, value, valueDecimals);
         if (bytes(tag1).length > 0 || bytes(tag2).length > 0) {
             emit FeedbackTags(agentId, idx, tag1, tag2);
-        }
-    }
-
-    /// @dev Emit feedback events (split to avoid stack-too-deep)
-    function _emitFeedback(
-        uint256 agentId,
-        address clientAddress,
-        uint64 idx,
-        int128 value,
-        uint8 valueDecimals,
-        string calldata tag1,
-        string calldata tag2,
-        string calldata endpoint,
-        string calldata feedbackURI,
-        bytes32 feedbackHash
-    ) internal {
-        emit NewFeedback(agentId, clientAddress, idx, value, valueDecimals);
-        if (bytes(tag1).length > 0 || bytes(tag2).length > 0) {
-            emit FeedbackTags(agentId, idx, tag1, tag2);
-        }
-        if (bytes(endpoint).length > 0 || bytes(feedbackURI).length > 0 || feedbackHash != bytes32(0)) {
-            emit FeedbackDetails(agentId, idx, endpoint, feedbackURI, feedbackHash);
         }
     }
 
