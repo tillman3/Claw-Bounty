@@ -30,7 +30,7 @@ const STAKING_TIERS = [
 ];
 
 const STATS = [
-  { label: "Total Staked", value: "—", icon: Lock, note: "Testnet" },
+  { label: "Total Staked", value: "—", icon: Lock, note: "Live on Base" },
   { label: "Active Validators", value: "—", icon: Users, note: "Pre-launch" },
   { label: "APY (Estimated)", value: "12-18%", icon: TrendingUp, note: "From protocol fees" },
   { label: "Slash Rate", value: "10%", icon: AlertTriangle, note: "Per offense" },
@@ -203,7 +203,7 @@ export default function StakingPage() {
           </Button>
         </div>
         <p className="text-xs text-zinc-600 mt-4">
-          Base Sepolia testnet • Mainnet staking coming soon
+          Live on Base mainnet • Stake $AECON to validate
         </p>
       </div>
     </div>

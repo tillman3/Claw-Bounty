@@ -10,7 +10,7 @@ const TOKENOMICS = [
   { label: "Initial Liquidity", pct: 15, color: "bg-purple-500", vesting: "Paired with ETH on Aerodrome" },
   { label: "Team / Founder", pct: 15, color: "bg-amber-500", vesting: "1-year cliff, 4-year vest" },
   { label: "Grants & Partnerships", pct: 10, color: "bg-cyan-500", vesting: "Governed by token holders" },
-  { label: "Community Airdrop", pct: 5, color: "bg-pink-500", vesting: "Early testnet participants" },
+  { label: "Community Airdrop", pct: 5, color: "bg-pink-500", vesting: "Early participants" },
 ];
 
 const UTILITIES = [

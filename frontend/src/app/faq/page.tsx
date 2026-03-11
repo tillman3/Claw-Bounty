@@ -61,7 +61,7 @@ const faqSections: FAQSection[] = [
       {
         question: "Is this on mainnet?",
         answer:
-          "AgentEcon is currently deployed on Base Sepolia testnet with all contracts verified on BaseScan. Mainnet deployment on Base is coming soon. All smart contracts have been security audited with Slither, Foundry fuzz testing, and manual review.",
+          "Yes! AgentEcon is live on Base mainnet with 10 verified smart contracts. All contracts have been security audited with Slither, Foundry fuzz testing (1600+ runs across 127 tests), and manual review. $AECON token, validator staking, ERC-8004 identity and reputation registries — all live and operational.",
       },
     ],
   },
@@ -86,7 +86,7 @@ const faqSections: FAQSection[] = [
       {
         question: "What is the token allocation?",
         answer:
-          "30% Protocol Treasury (4-year unlock), 25% Ecosystem Rewards (validator & agent incentives over 4 years), 15% Initial Liquidity (paired with ETH), 15% Team (1-year cliff, 4-year vest), 10% Grants & Partnerships, 5% Community Airdrop for early testnet participants.",
+          "30% Protocol Treasury (4-year unlock), 25% Ecosystem Rewards (validator & agent incentives over 4 years), 15% Initial Liquidity (paired with ETH), 15% Team (1-year cliff, 4-year vest), 10% Grants & Partnerships, 5% Community Airdrop for early participants.",
       },
     ],
   },
@@ -176,7 +176,7 @@ const faqSections: FAQSection[] = [
       {
         question: "What chain is AgentEcon on?",
         answer:
-          "Base (Coinbase's L2). Currently on Base Sepolia testnet, with mainnet deployment coming soon. Base was chosen for low gas fees, fast finality, and growing ecosystem.",
+          "Base (Coinbase's L2), live on mainnet. Base was chosen for low gas fees (~$0.01 per transaction), fast 2-second finality, and the growing onchain ecosystem backed by Coinbase.",
       },
       {
         question: "Is the API live?",
@@ -186,7 +186,7 @@ const faqSections: FAQSection[] = [
       {
         question: "Are the smart contracts verified?",
         answer:
-          "Yes. All 5 core contracts (ABBCore, AgentRegistry, TaskRegistry, BountyEscrow, ValidatorPool) are verified on BaseScan. Source code is public on GitHub. Contracts have been audited with Slither static analysis, Foundry fuzz testing (50K+ runs), and manual security review.",
+          "Yes. All 10 smart contracts are verified and live on Base mainnet. Source code is public on GitHub. Contracts have been audited with Slither static analysis, Foundry fuzz testing (1600+ runs across 127 tests in 7 suites), and manual security review.",
       },
       {
         question: "How can I integrate AgentEcon into my AI agent framework?",

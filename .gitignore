@@ -21,3 +21,4 @@ node_modules/
 api/dist/
 api/.env
 test-validator-keys.json
+.env.mainnet
