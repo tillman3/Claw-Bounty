@@ -11,7 +11,6 @@ import "./AgentIdentity8004.sol";
 /// @dev Feedback is stored on-chain for composability. Off-chain files (IPFS) for
 ///      rich data. Aggregation can happen both on-chain and off-chain.
 contract ReputationRegistry8004 is Ownable2Step, Pausable {
-
     // ═══════════════════════════════════════════
     //  State
     // ═══════════════════════════════════════════
@@ -24,7 +23,7 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
         string tag1;
         string tag2;
         bool isRevoked;
-        uint64 feedbackIndex;  // 1-indexed per (clientAddress, agentId) pair
+        uint64 feedbackIndex; // 1-indexed per (clientAddress, agentId) pair
         uint64 timestamp;
     }
 
@@ -49,33 +48,16 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
     // ═══════════════════════════════════════════
 
     event NewFeedback(
-        uint256 indexed agentId,
-        address indexed clientAddress,
-        uint64 feedbackIndex,
-        int128 value,
-        uint8 valueDecimals
+        uint256 indexed agentId, address indexed clientAddress, uint64 feedbackIndex, int128 value, uint8 valueDecimals
     );
 
-    event FeedbackTags(
-        uint256 indexed agentId,
-        uint64 feedbackIndex,
-        string tag1,
-        string tag2
-    );
+    event FeedbackTags(uint256 indexed agentId, uint64 feedbackIndex, string tag1, string tag2);
 
     event FeedbackDetails(
-        uint256 indexed agentId,
-        uint64 feedbackIndex,
-        string endpoint,
-        string feedbackURI,
-        bytes32 feedbackHash
+        uint256 indexed agentId, uint64 feedbackIndex, string endpoint, string feedbackURI, bytes32 feedbackHash
     );
 
-    event FeedbackRevoked(
-        uint256 indexed agentId,
-        address indexed clientAddress,
-        uint64 feedbackIndex
-    );
+    event FeedbackRevoked(uint256 indexed agentId, address indexed clientAddress, uint64 feedbackIndex);
 
     event AuthorizedSourceSet(address indexed source, bool authorized);
 
@@ -124,15 +106,15 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
         if (agentOwner == address(0)) revert AgentNotRegistered();
         if (agentOwner == msg.sender) revert CannotFeedbackOwnAgent();
 
-        uint64 idx = _recordFeedback(
-            input.agentId, msg.sender, input.value, input.valueDecimals, input.tag1, input.tag2
-        );
+        uint64 idx =
+            _recordFeedback(input.agentId, msg.sender, input.value, input.valueDecimals, input.tag1, input.tag2);
 
         emit NewFeedback(input.agentId, msg.sender, idx, input.value, input.valueDecimals);
         if (bytes(input.tag1).length > 0 || bytes(input.tag2).length > 0) {
             emit FeedbackTags(input.agentId, idx, input.tag1, input.tag2);
         }
-        if (bytes(input.endpoint).length > 0 || bytes(input.feedbackURI).length > 0 || input.feedbackHash != bytes32(0)) {
+        if (bytes(input.endpoint).length > 0 || bytes(input.feedbackURI).length > 0 || input.feedbackHash != bytes32(0))
+        {
             emit FeedbackDetails(input.agentId, idx, input.endpoint, input.feedbackURI, input.feedbackHash);
         }
     }
@@ -218,11 +200,7 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
     }
 
     /// @notice Get aggregate reputation score for an agent
-    function getAggregateScore(uint256 agentId)
-        external
-        view
-        returns (int256 score, uint256 count)
-    {
+    function getAggregateScore(uint256 agentId) external view returns (int256 score, uint256 count) {
         return (aggregateScore[agentId], aggregateCount[agentId]);
     }
 
@@ -242,6 +220,11 @@ contract ReputationRegistry8004 is Ownable2Step, Pausable {
         emit AuthorizedSourceSet(source, authorized);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 }

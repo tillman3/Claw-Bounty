@@ -61,8 +61,8 @@ contract DeployToken is Script {
             treasury,
             30_000_000 ether,
             now_,
-            0,              // no cliff
-            4 * 365 days    // 4 year vest
+            0, // no cliff
+            4 * 365 days // 4 year vest
         );
         console.log("Treasury grant: 30M AECON, 4yr vest");
 
@@ -75,8 +75,8 @@ contract DeployToken is Script {
             team,
             15_000_000 ether,
             now_,
-            365 days,       // 1 year cliff
-            4 * 365 days    // 4 year total vest
+            365 days, // 1 year cliff
+            4 * 365 days // 4 year total vest
         );
         console.log("Team grant: 15M AECON, 1yr cliff + 4yr vest");
 

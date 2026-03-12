@@ -234,8 +234,14 @@ contract SecurityV2Test is Test {
         uint256 agentId = identity.register();
 
         ReputationRegistry8004.FeedbackInput memory input = ReputationRegistry8004.FeedbackInput({
-            agentId: agentId, value: 100, valueDecimals: 0,
-            tag1: "", tag2: "", endpoint: "", feedbackURI: "", feedbackHash: bytes32(0)
+            agentId: agentId,
+            value: 100,
+            valueDecimals: 0,
+            tag1: "",
+            tag2: "",
+            endpoint: "",
+            feedbackURI: "",
+            feedbackHash: bytes32(0)
         });
 
         vm.prank(alice); // agent owner
@@ -257,8 +263,14 @@ contract SecurityV2Test is Test {
         uint256 agentId = identity.register();
 
         ReputationRegistry8004.FeedbackInput memory input = ReputationRegistry8004.FeedbackInput({
-            agentId: agentId, value: value1, valueDecimals: 0,
-            tag1: "", tag2: "", endpoint: "", feedbackURI: "", feedbackHash: bytes32(0)
+            agentId: agentId,
+            value: value1,
+            valueDecimals: 0,
+            tag1: "",
+            tag2: "",
+            endpoint: "",
+            feedbackURI: "",
+            feedbackHash: bytes32(0)
         });
 
         vm.prank(bob);

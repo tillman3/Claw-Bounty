@@ -91,7 +91,7 @@ contract AECONTokenTest is Test {
     function test_createVestingGrant() public {
         uint256 amount = 15_000_000 ether; // team allocation
         uint64 start = uint64(block.timestamp);
-        uint64 cliff = 365 days;       // 1 year cliff
+        uint64 cliff = 365 days; // 1 year cliff
         uint64 duration = 4 * 365 days; // 4 year vest
 
         vm.startPrank(owner);
@@ -189,7 +189,7 @@ contract AECONTokenTest is Test {
         vm.prank(alice);
         staking.stake(stakeAmount);
 
-        (uint256 amount,,,,bool active) = staking.stakes(alice);
+        (uint256 amount,,,, bool active) = staking.stakes(alice);
         assertEq(amount, stakeAmount);
         assertTrue(active);
         assertEq(staking.totalStaked(), stakeAmount);
@@ -230,7 +230,7 @@ contract AECONTokenTest is Test {
         vm.prank(alice);
         staking.unstake();
 
-        (uint256 amount,,,,bool active) = staking.stakes(alice);
+        (uint256 amount,,,, bool active) = staking.stakes(alice);
         assertEq(amount, 0);
         assertFalse(active);
         assertEq(token.balanceOf(alice), 5_000 ether);
@@ -276,7 +276,7 @@ contract AECONTokenTest is Test {
         // Slash 10% → 900 AECON, below 1000 minimum
         staking.slash(alice, "bad scoring");
 
-        (,,,,bool active) = staking.stakes(alice);
+        (,,,, bool active) = staking.stakes(alice);
         assertFalse(active);
         assertEq(staking.getActiveValidatorCount(), 0);
     }
@@ -295,7 +295,7 @@ contract AECONTokenTest is Test {
         // Alice and Bob stake
         _fundAndApprove(alice, 5_000 ether);
         _fundAndApprove(bob, 5_000 ether);
-        
+
         vm.prank(alice);
         staking.stake(5_000 ether);
         vm.prank(bob);
@@ -311,7 +311,7 @@ contract AECONTokenTest is Test {
         // Each should get ~500 AECON (50/50 split)
         uint256 aliceRewards = staking.pendingRewards(alice);
         uint256 bobRewards = staking.pendingRewards(bob);
-        
+
         assertApproxEqRel(aliceRewards, 500 ether, 0.01e18);
         assertApproxEqRel(bobRewards, 500 ether, 0.01e18);
     }
@@ -347,7 +347,7 @@ contract AECONTokenTest is Test {
 
         // Alice has 75%, Bob has 25%
         assertEq(staking.getStakeWeight(alice), 7500); // 75% in basis points
-        assertEq(staking.getStakeWeight(bob), 2500);   // 25% in basis points
+        assertEq(staking.getStakeWeight(bob), 2500); // 25% in basis points
     }
 
     function test_multipleValidatorsActiveList() public {
@@ -370,7 +370,7 @@ contract AECONTokenTest is Test {
         staking.unstake();
 
         assertEq(staking.getActiveValidatorCount(), 2);
-        
+
         // Verify remaining validators
         address[] memory validators = staking.getActiveValidators();
         assertEq(validators.length, 2);

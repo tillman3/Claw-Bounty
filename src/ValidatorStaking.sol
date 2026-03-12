@@ -17,21 +17,21 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct StakeInfo {
-        uint256 amount;           // total staked $AECON
-        uint256 rewards;          // accumulated unclaimed rewards
-        uint64  stakedAt;         // timestamp of initial stake
-        uint64  lastRewardUpdate; // last time rewards were calculated
-        bool    active;           // can participate in panels
+        uint256 amount; // total staked $AECON
+        uint256 rewards; // accumulated unclaimed rewards
+        uint64 stakedAt; // timestamp of initial stake
+        uint64 lastRewardUpdate; // last time rewards were calculated
+        bool active; // can participate in panels
     }
 
     IERC20 public immutable aeconToken;
-    
-    uint256 public minStake = 1_000 ether;       // 1,000 AECON minimum
+
+    uint256 public minStake = 1_000 ether; // 1,000 AECON minimum
     uint256 public totalStaked;
-    uint256 public rewardPool;                    // accumulated rewards for distribution
-    uint256 public rewardRatePerToken;            // accumulated reward per staked token
-    uint256 public slashBasisPoints = 1000;       // 10% slash on dishonest scoring
-    uint256 public constant MAX_SLASH_BP = 5000;  // max 50% slash
+    uint256 public rewardPool; // accumulated rewards for distribution
+    uint256 public rewardRatePerToken; // accumulated reward per staked token
+    uint256 public slashBasisPoints = 1000; // 10% slash on dishonest scoring
+    uint256 public constant MAX_SLASH_BP = 5000; // max 50% slash
 
     mapping(address => StakeInfo) public stakes;
     mapping(address => uint256) public userRewardPerTokenPaid;
@@ -76,12 +76,12 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param amount Number of tokens to stake (must be >= minStake)
     function stake(uint256 amount) external nonReentrant whenNotPaused {
         if (amount < minStake) revert InsufficientStake();
-        
+
         StakeInfo storage info = stakes[msg.sender];
-        
+
         // Update rewards before changing stake
         _updateReward(msg.sender);
-        
+
         if (info.active) {
             // Adding to existing stake
             info.amount += amount;
@@ -91,7 +91,7 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
             info.stakedAt = uint64(block.timestamp);
             info.lastRewardUpdate = uint64(block.timestamp);
             info.active = true;
-            
+
             // Add to active list
             _validatorIndex[msg.sender] = activeValidators.length;
             activeValidators.push(msg.sender);
@@ -109,22 +109,22 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
         StakeInfo storage info = stakes[msg.sender];
         if (!info.active) revert NotActive();
         if (block.timestamp < info.stakedAt + UNSTAKE_COOLDOWN) revert CooldownNotMet();
-        
+
         _updateReward(msg.sender);
-        
+
         uint256 amount = info.amount;
         info.amount = 0;
         info.active = false;
-        
+
         // Remove from active list (swap and pop)
         _removeFromActiveList(msg.sender);
-        
+
         totalStaked -= amount;
-        
+
         // Transfer stake + any pending rewards
         uint256 pending = info.rewards;
         info.rewards = 0;
-        
+
         aeconToken.safeTransfer(msg.sender, amount + pending);
 
         emit Unstaked(msg.sender, amount);
@@ -136,11 +136,11 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     /// @notice Claim accumulated staking rewards without unstaking
     function claimRewards() external nonReentrant {
         _updateReward(msg.sender);
-        
+
         StakeInfo storage info = stakes[msg.sender];
         uint256 reward = info.rewards;
         if (reward == 0) revert NoRewardsToClaim();
-        
+
         info.rewards = 0;
         aeconToken.safeTransfer(msg.sender, reward);
 
@@ -155,19 +155,19 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     function slash(address validator, string calldata reason) external onlyAuthorized {
         StakeInfo storage info = stakes[validator];
         if (!info.active) revert NotActive();
-        
+
         uint256 slashAmount = (info.amount * slashBasisPoints) / 10000;
         info.amount -= slashAmount;
         totalStaked -= slashAmount;
-        
+
         // Half burned (sent to dead address), half to reward pool
         uint256 burnAmount = slashAmount / 2;
         uint256 rewardAmount = slashAmount - burnAmount;
-        
+
         // Burn by sending to dead address
         aeconToken.safeTransfer(address(0xdead), burnAmount);
         rewardPool += rewardAmount;
-        
+
         // Deactivate if below minimum
         if (info.amount < minStake) {
             info.active = false;
@@ -181,9 +181,9 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     /// @param amount Number of $AECON to add to reward pool
     function depositRewards(uint256 amount) external {
         if (amount == 0) revert InvalidAmount();
-        
+
         aeconToken.safeTransferFrom(msg.sender, address(this), amount);
-        
+
         if (totalStaked > 0) {
             rewardRatePerToken += (amount * 1e18) / totalStaked;
         }
@@ -208,7 +208,7 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     function pendingRewards(address validator) external view returns (uint256) {
         StakeInfo storage info = stakes[validator];
         if (!info.active || info.amount == 0) return info.rewards;
-        
+
         uint256 pending = (info.amount * (rewardRatePerToken - userRewardPerTokenPaid[validator])) / 1e18;
         return info.rewards + pending;
     }
@@ -237,8 +237,13 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
         emit SlashRateUpdated(newBasisPoints);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     // ─── Internal ───
 
@@ -255,13 +260,13 @@ contract ValidatorStaking is Ownable2Step, Pausable, ReentrancyGuard {
     function _removeFromActiveList(address validator) internal {
         uint256 index = _validatorIndex[validator];
         uint256 lastIndex = activeValidators.length - 1;
-        
+
         if (index != lastIndex) {
             address lastValidator = activeValidators[lastIndex];
             activeValidators[index] = lastValidator;
             _validatorIndex[lastValidator] = index;
         }
-        
+
         activeValidators.pop();
         delete _validatorIndex[validator];
     }

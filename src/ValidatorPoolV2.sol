@@ -13,16 +13,15 @@ import "./vendor/chainlink/vrf/dev/libraries/VRFV2PlusClient.sol";
 ///         future $AECON staking integration.
 /// @dev Extends V1 with ValidationTier enum and auto-score paths for AI validators.
 contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
-
     // ═══════════════════════════════════════════
     //  Enums
     // ═══════════════════════════════════════════
 
     /// @notice Validation tier determines panel size and scoring mechanism
     enum ValidationTier {
-        Micro,    // < 0.01 ETH bounty — 1 AI validator, instant score
+        Micro, // < 0.01 ETH bounty — 1 AI validator, instant score
         Standard, // 0.01-1 ETH — 3 AI validators, direct score (no commit-reveal)
-        Premium   // > 1 ETH — 5 validators, full commit-reveal consensus
+        Premium // > 1 ETH — 5 validators, full commit-reveal consensus
     }
 
     // ═══════════════════════════════════════════
@@ -35,7 +34,7 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         uint256 reputationScore; // 0-10000 bps
         uint64 registeredAt;
         bool active;
-        bool isAIValidator;       // V2: can auto-score (no commit-reveal needed)
+        bool isAIValidator; // V2: can auto-score (no commit-reveal needed)
         uint256 pendingUnstake;
         uint64 unstakeRequestTime;
     }
@@ -55,9 +54,9 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         mapping(address => bool) hasCommitted;
         mapping(address => bool) hasRevealed;
         uint8 revealCount;
-        uint8 requiredScores;    // minimum scores needed for consensus
-        uint64 commitDeadline;   // Premium only
-        uint64 revealDeadline;   // Premium only
+        uint8 requiredScores; // minimum scores needed for consensus
+        uint64 commitDeadline; // Premium only
+        uint64 revealDeadline; // Premium only
         bool finalized;
         bool accepted;
         uint8 medianScore;
@@ -113,7 +112,7 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
     mapping(address => Validator) public validators;
     address[] public validatorList;
     uint256 public activeValidatorCount;
-    uint256 public aiValidatorCount;   // V2: track AI validators separately
+    uint256 public aiValidatorCount; // V2: track AI validators separately
 
     mapping(uint256 => ReviewRound) internal _rounds;
     mapping(uint256 => PendingPanelRequest) public pendingRequests;
@@ -201,7 +200,8 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         address[] storage panel = _rounds[taskId].validators;
         bool found;
         for (uint256 i; i < panel.length; i++) {
-            if (panel[i] == msg.sender) { found = true; break; }
+            if (panel[i] == msg.sender) found = true;
+            break;
         }
         if (!found) revert NotOnPanel();
     }
@@ -370,7 +370,7 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         pendingRequests[vrfRequestId] = PendingPanelRequest({
             taskId: taskId,
             tier: ValidationTier.Standard,
-            commitDuration: 0,  // not used for standard
+            commitDuration: 0, // not used for standard
             revealDuration: 0,
             requestedAt: uint64(block.timestamp),
             pending: true
@@ -385,11 +385,12 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
     // ═══════════════════════════════════════════
 
     /// @notice Request premium panel via VRF (5 validators, commit-reveal)
-    function requestPremiumPanel(
-        uint256 taskId,
-        uint64 commitDuration,
-        uint64 revealDuration
-    ) external onlyAuthorized whenNotPaused returns (uint256 vrfRequestId) {
+    function requestPremiumPanel(uint256 taskId, uint64 commitDuration, uint64 revealDuration)
+        external
+        onlyAuthorized
+        whenNotPaused
+        returns (uint256 vrfRequestId)
+    {
         if (activeValidatorCount < PREMIUM_PANEL_SIZE) revert NotEnoughValidators();
         if (panelSelected[taskId] || _rounds[taskId].initialized) revert PanelAlreadyRequested();
 
@@ -419,7 +420,10 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
 
     /// @notice Legacy V1 compatible panel request (defaults to Premium)
     function requestPanel(uint256 taskId, uint64 commitDuration, uint64 revealDuration)
-        external onlyAuthorized whenNotPaused returns (uint256)
+        external
+        onlyAuthorized
+        whenNotPaused
+        returns (uint256)
     {
         return this.requestPremiumPanel(taskId, commitDuration, revealDuration);
     }
@@ -454,7 +458,9 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         // Fisher-Yates selection
         uint256 len = validatorList.length;
         address[] memory candidates = new address[](len);
-        for (uint256 i; i < len; i++) candidates[i] = validatorList[i];
+        for (uint256 i; i < len; i++) {
+            candidates[i] = validatorList[i];
+        }
 
         address[] memory panel = new address[](panelSize);
         uint256 selected;
@@ -742,7 +748,10 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         emit AuthorizedCallerSet(caller, authorized);
     }
 
-    function setVRFConfig(bytes32 _keyHash, uint256 _subscriptionId, uint16 _confirmations, uint32 _callbackGasLimit) external onlyOwner {
+    function setVRFConfig(bytes32 _keyHash, uint256 _subscriptionId, uint16 _confirmations, uint32 _callbackGasLimit)
+        external
+        onlyOwner
+    {
         vrfKeyHash = _keyHash;
         vrfSubscriptionId = _subscriptionId;
         vrfRequestConfirmations = _confirmations;
@@ -750,17 +759,33 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         emit VRFConfigUpdated(_keyHash, _subscriptionId, _confirmations, _callbackGasLimit);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     // ═══════════════════════════════════════════
     //  View Functions
     // ═══════════════════════════════════════════
 
-    function getValidator(address addr) external view returns (Validator memory) { return validators[addr]; }
-    function isRoundFinalized(uint256 taskId) external view returns (bool) { return _rounds[taskId].finalized; }
-    function isRoundInitialized(uint256 taskId) external view returns (bool) { return _rounds[taskId].initialized; }
-    function isPanelSelected(uint256 taskId) external view returns (bool) { return panelSelected[taskId]; }
+    function getValidator(address addr) external view returns (Validator memory) {
+        return validators[addr];
+    }
+
+    function isRoundFinalized(uint256 taskId) external view returns (bool) {
+        return _rounds[taskId].finalized;
+    }
+
+    function isRoundInitialized(uint256 taskId) external view returns (bool) {
+        return _rounds[taskId].initialized;
+    }
+
+    function isPanelSelected(uint256 taskId) external view returns (bool) {
+        return panelSelected[taskId];
+    }
 
     function getRoundResult(uint256 taskId) external view returns (bool accepted, uint8 medianScore) {
         ReviewRound storage r = _rounds[taskId];
@@ -771,8 +796,13 @@ contract ValidatorPoolV2 is Ownable2Step, Pausable, ReentrancyGuard {
         return _rounds[taskId].tier;
     }
 
-    function getActiveValidatorCount() external view returns (uint256) { return activeValidatorCount; }
-    function getAIValidatorCount() external view returns (uint256) { return aiValidatorCount; }
+    function getActiveValidatorCount() external view returns (uint256) {
+        return activeValidatorCount;
+    }
+
+    function getAIValidatorCount() external view returns (uint256) {
+        return aiValidatorCount;
+    }
 
     // ═══════════════════════════════════════════
     //  Internal Helpers

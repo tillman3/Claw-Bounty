@@ -11,9 +11,7 @@ contract MockVRFCoordinator {
     uint256 private _nextRequestId = 1;
     address public lastRequester;
 
-    function requestRandomWords(
-        VRFV2PlusClient.RandomWordsRequest calldata
-    ) external returns (uint256) {
+    function requestRandomWords(VRFV2PlusClient.RandomWordsRequest calldata) external returns (uint256) {
         lastRequester = msg.sender;
         return _nextRequestId++;
     }
@@ -28,7 +26,7 @@ contract ValidatorPoolV2Test is Test {
     MockVRFCoordinator public mockVRF;
 
     address public owner = address(0x1);
-    address public core = address(0x99);   // authorized caller (ABBCore)
+    address public core = address(0x99); // authorized caller (ABBCore)
     address public treasury = address(0xFEE);
 
     // Validators
@@ -73,13 +71,13 @@ contract ValidatorPoolV2Test is Test {
     // ═══════════════════════════════════════════
 
     function test_tierSelection() public view {
-        assertEq(uint(pool.getTier(0.005 ether)), uint(ValidatorPoolV2.ValidationTier.Micro));
-        assertEq(uint(pool.getTier(0.009 ether)), uint(ValidatorPoolV2.ValidationTier.Micro));
-        assertEq(uint(pool.getTier(0.01 ether)), uint(ValidatorPoolV2.ValidationTier.Standard));
-        assertEq(uint(pool.getTier(0.5 ether)), uint(ValidatorPoolV2.ValidationTier.Standard));
-        assertEq(uint(pool.getTier(1 ether)), uint(ValidatorPoolV2.ValidationTier.Standard));
-        assertEq(uint(pool.getTier(1.01 ether)), uint(ValidatorPoolV2.ValidationTier.Premium));
-        assertEq(uint(pool.getTier(10 ether)), uint(ValidatorPoolV2.ValidationTier.Premium));
+        assertEq(uint256(pool.getTier(0.005 ether)), uint256(ValidatorPoolV2.ValidationTier.Micro));
+        assertEq(uint256(pool.getTier(0.009 ether)), uint256(ValidatorPoolV2.ValidationTier.Micro));
+        assertEq(uint256(pool.getTier(0.01 ether)), uint256(ValidatorPoolV2.ValidationTier.Standard));
+        assertEq(uint256(pool.getTier(0.5 ether)), uint256(ValidatorPoolV2.ValidationTier.Standard));
+        assertEq(uint256(pool.getTier(1 ether)), uint256(ValidatorPoolV2.ValidationTier.Standard));
+        assertEq(uint256(pool.getTier(1.01 ether)), uint256(ValidatorPoolV2.ValidationTier.Premium));
+        assertEq(uint256(pool.getTier(10 ether)), uint256(ValidatorPoolV2.ValidationTier.Premium));
     }
 
     // ═══════════════════════════════════════════
@@ -126,7 +124,7 @@ contract ValidatorPoolV2Test is Test {
 
         assertTrue(pool.isPanelSelected(taskId));
         assertTrue(pool.isRoundInitialized(taskId));
-        assertEq(uint(pool.getRoundTier(taskId)), uint(ValidatorPoolV2.ValidationTier.Micro));
+        assertEq(uint256(pool.getRoundTier(taskId)), uint256(ValidatorPoolV2.ValidationTier.Micro));
 
         // AI validator submits direct score
         vm.prank(aiVal1);
@@ -241,14 +239,14 @@ contract ValidatorPoolV2Test is Test {
         mockVRF.fulfillRandomWords(address(pool), 1, words);
 
         assertTrue(pool.isPanelSelected(taskId));
-        assertEq(uint(pool.getRoundTier(taskId)), uint(ValidatorPoolV2.ValidationTier.Premium));
+        assertEq(uint256(pool.getRoundTier(taskId)), uint256(ValidatorPoolV2.ValidationTier.Premium));
 
         // Commit phase
         bytes32[5] memory salts;
         uint8[5] memory scores = [uint8(80), 85, 82, 78, 88];
         address[5] memory vals = [val1, val2, val3, val4, val5];
 
-        for (uint i; i < 5; i++) {
+        for (uint256 i; i < 5; i++) {
             salts[i] = keccak256(abi.encodePacked("salt", i));
             bytes32 commitHash = keccak256(abi.encodePacked(taskId, scores[i], salts[i]));
             vm.prank(vals[i]);
@@ -259,7 +257,7 @@ contract ValidatorPoolV2Test is Test {
         vm.warp(block.timestamp + commitDuration + 1);
 
         // Reveal phase
-        for (uint i; i < 5; i++) {
+        for (uint256 i; i < 5; i++) {
             vm.prank(vals[i]);
             pool.revealScore(taskId, scores[i], salts[i]);
         }
@@ -364,11 +362,11 @@ contract ValidatorPoolV2Test is Test {
         ValidatorPoolV2.ValidationTier tier = pool.getTier(bounty);
 
         if (bounty < 0.01 ether) {
-            assertEq(uint(tier), uint(ValidatorPoolV2.ValidationTier.Micro));
+            assertEq(uint256(tier), uint256(ValidatorPoolV2.ValidationTier.Micro));
         } else if (bounty <= 1 ether) {
-            assertEq(uint(tier), uint(ValidatorPoolV2.ValidationTier.Standard));
+            assertEq(uint256(tier), uint256(ValidatorPoolV2.ValidationTier.Standard));
         } else {
-            assertEq(uint(tier), uint(ValidatorPoolV2.ValidationTier.Premium));
+            assertEq(uint256(tier), uint256(ValidatorPoolV2.ValidationTier.Premium));
         }
     }
 
@@ -403,7 +401,7 @@ contract ValidatorPoolV2Test is Test {
             addrs = [val1, val2, val3, val4, val5];
         }
 
-        for (uint i; i < count; i++) {
+        for (uint256 i; i < count; i++) {
             vm.deal(addrs[i], 1 ether);
             vm.prank(addrs[i]);
             pool.registerValidator{value: 0.1 ether}(asAI);

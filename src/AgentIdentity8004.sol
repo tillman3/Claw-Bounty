@@ -47,10 +47,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     event Registered(uint256 indexed agentId, string agentURI, address indexed owner);
     event URIUpdated(uint256 indexed agentId, string newURI, address indexed updatedBy);
     event MetadataSet(
-        uint256 indexed agentId,
-        string indexed indexedMetadataKey,
-        string metadataKey,
-        bytes metadataValue
+        uint256 indexed agentId, string indexed indexedMetadataKey, string metadataKey, bytes metadataValue
     );
     event AgentWalletSet(uint256 indexed agentId, address indexed newWallet);
     event AgentWalletCleared(uint256 indexed agentId);
@@ -122,11 +119,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     }
 
     /// @notice Register with just a URI
-    function register(string calldata agentURI)
-        external
-        whenNotPaused
-        returns (uint256 agentId)
-    {
+    function register(string calldata agentURI) external whenNotPaused returns (uint256 agentId) {
         agentId = _nextAgentId++;
         _safeMint(msg.sender, agentId);
 
@@ -165,11 +158,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     // ═══════════════════════════════════════════
 
     /// @notice Get on-chain metadata for an agent
-    function getMetadata(uint256 agentId, string calldata metadataKey)
-        external
-        view
-        returns (bytes memory)
-    {
+    function getMetadata(uint256 agentId, string calldata metadataKey) external view returns (bytes memory) {
         if (keccak256(bytes(metadataKey)) == keccak256("agentWallet")) {
             return abi.encodePacked(_agentWallets[agentId]);
         }
@@ -190,12 +179,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     // ═══════════════════════════════════════════
 
     /// @notice Set agent wallet with EIP-712 signature proof of new wallet ownership
-    function setAgentWallet(
-        uint256 agentId,
-        address newWallet,
-        uint256 deadline,
-        bytes calldata signature
-    ) external {
+    function setAgentWallet(uint256 agentId, address newWallet, uint256 deadline, bytes calldata signature) external {
         _requireOwnerOrApproved(agentId);
         if (block.timestamp > deadline) revert DeadlineExpired();
         if (newWallet == address(0)) revert ZeroAddress();
@@ -226,11 +210,7 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
     //  Transfer Hook — clear wallet on transfer
     // ═══════════════════════════════════════════
 
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override
-        returns (address)
-    {
+    function _update(address to, uint256 tokenId, address auth) internal override returns (address) {
         address from = super._update(to, tokenId, auth);
         // Clear agentWallet on transfer (ERC-8004 spec)
         if (from != address(0) && to != address(0) && from != to) {
@@ -255,8 +235,13 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
         emit AuthorizedCallerSet(caller, authorized);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     // ═══════════════════════════════════════════
     //  View
@@ -272,9 +257,8 @@ contract AgentIdentity8004 is ERC721URIStorage, Ownable2Step, Pausable, EIP712 {
 
     function _requireOwnerOrApproved(uint256 agentId) internal view {
         if (
-            ownerOf(agentId) != msg.sender &&
-            getApproved(agentId) != msg.sender &&
-            !isApprovedForAll(ownerOf(agentId), msg.sender)
+            ownerOf(agentId) != msg.sender && getApproved(agentId) != msg.sender
+                && !isApprovedForAll(ownerOf(agentId), msg.sender)
         ) revert NotAgentOwnerOrApproved();
     }
 

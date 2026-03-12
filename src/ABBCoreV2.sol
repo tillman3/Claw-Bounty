@@ -172,7 +172,8 @@ contract ABBCoreV2 is Ownable2Step, Pausable, ReentrancyGuard {
     function finalizeReview(uint256 taskId) external whenNotPaused nonReentrant {
         if (!validatorPool.isRoundFinalized(taskId)) {
             (bool _accepted, uint8 _median) = validatorPool.finalizeRound(taskId);
-            (_accepted); (_median); // tracked via getRoundResult below
+            (_accepted); // tracked via getRoundResult below
+            (_median);
         }
 
         (bool accepted, uint8 medianScore) = validatorPool.getRoundResult(taskId);
@@ -270,8 +271,13 @@ contract ABBCoreV2 is Ownable2Step, Pausable, ReentrancyGuard {
         emit TimingConfigured(_commitDuration, _revealDuration);
     }
 
-    function pause() external onlyOwner { _pause(); }
-    function unpause() external onlyOwner { _unpause(); }
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
 
     // ═══════════════════════════════════════════
     //  View Helpers

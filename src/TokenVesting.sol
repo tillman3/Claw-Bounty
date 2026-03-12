@@ -13,12 +13,12 @@ contract TokenVesting is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     struct VestingGrant {
-        uint256 totalAmount;      // total tokens in grant
-        uint256 released;         // tokens already claimed
-        uint64  startTime;        // vesting start timestamp
-        uint64  cliffDuration;    // seconds before any tokens unlock
-        uint64  vestingDuration;  // total vesting period (includes cliff)
-        bool    exists;
+        uint256 totalAmount; // total tokens in grant
+        uint256 released; // tokens already claimed
+        uint64 startTime; // vesting start timestamp
+        uint64 cliffDuration; // seconds before any tokens unlock
+        uint64 vestingDuration; // total vesting period (includes cliff)
+        bool exists;
     }
 
     IERC20 public immutable token;

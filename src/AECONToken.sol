@@ -22,29 +22,17 @@ contract AECONToken is ERC20, ERC20Permit, ERC20Votes, Ownable2Step {
     /// @notice All tokens minted to deployer at construction.
     ///         Deployer then distributes to vesting contracts, LP, etc.
     /// @param _owner Address that receives total supply and contract ownership
-    constructor(address _owner)
-        ERC20("AgentEcon", "AECON")
-        ERC20Permit("AgentEcon")
-        Ownable(_owner)
-    {
+    constructor(address _owner) ERC20("AgentEcon", "AECON") ERC20Permit("AgentEcon") Ownable(_owner) {
         _mint(_owner, TOTAL_SUPPLY);
     }
 
     // ─── Overrides required by Solidity for ERC20Votes ───
 
-    function _update(address from, address to, uint256 value)
-        internal
-        override(ERC20, ERC20Votes)
-    {
+    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
         super._update(from, to, value);
     }
 
-    function nonces(address owner_)
-        public
-        view
-        override(ERC20Permit, Nonces)
-        returns (uint256)
-    {
+    function nonces(address owner_) public view override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(owner_);
     }
 }

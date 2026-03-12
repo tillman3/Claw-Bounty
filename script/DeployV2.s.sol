@@ -28,10 +28,8 @@ contract DeployV2 is Script {
         // VRF config (Base Sepolia)
         address vrfCoordinator = vm.envOr("VRF_COORDINATOR", address(0x5C210eF41CD1a72de73bF76eC39637bB0d3d7BEE));
         uint256 vrfSubscriptionId = vm.envOr("VRF_SUBSCRIPTION_ID", uint256(0));
-        bytes32 vrfKeyHash = vm.envOr(
-            "VRF_KEY_HASH",
-            bytes32(0x9e1344a1247c8a1785d0a4681a27152bffdb43666ae5bf7d14d24a5efd44bf71)
-        );
+        bytes32 vrfKeyHash =
+            vm.envOr("VRF_KEY_HASH", bytes32(0x9e1344a1247c8a1785d0a4681a27152bffdb43666ae5bf7d14d24a5efd44bf71));
 
         vm.startBroadcast(deployerPrivateKey);
 
@@ -47,19 +45,10 @@ contract DeployV2 is Script {
         //  2. V2 contracts
         // ═══════════════════════════════════════════
 
-        ValidatorPoolV2 validatorPool = new ValidatorPoolV2(
-            deployer,
-            vrfCoordinator,
-            vrfSubscriptionId,
-            vrfKeyHash
-        );
+        ValidatorPoolV2 validatorPool = new ValidatorPoolV2(deployer, vrfCoordinator, vrfSubscriptionId, vrfKeyHash);
 
         ABBCoreV2 core = new ABBCoreV2(
-            deployer,
-            address(taskRegistry),
-            address(bountyEscrow),
-            address(validatorPool),
-            address(agentRegistry)
+            deployer, address(taskRegistry), address(bountyEscrow), address(validatorPool), address(agentRegistry)
         );
 
         // ═══════════════════════════════════════════
