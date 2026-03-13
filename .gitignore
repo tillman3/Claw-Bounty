@@ -22,3 +22,4 @@ api/dist/
 api/.env
 test-validator-keys.json
 .env.mainnet
+.env.agents
