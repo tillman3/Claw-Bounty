@@ -12,6 +12,7 @@ router.get("/", async (req: Request, res: Response) => {
   const statusFilter = req.query.status as string | undefined;
   const nextId = Number(await taskRegistry.nextTaskId());
   const tasks = [];
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   for (let i = 0; i < nextId; i++) {
     try {
@@ -22,9 +23,11 @@ router.get("/", async (req: Request, res: Response) => {
       if (!statusFilter || formatted.state === statusFilter) {
         tasks.push(formatted);
       }
-    } catch {
-      // skip
+    } catch (err) {
+      console.warn(`Failed to fetch task ${i}:`, (err as Error).message?.slice(0, 80));
     }
+    // Throttle RPC calls to avoid rate limiting on free endpoints
+    if (i < nextId - 1) await sleep(100);
   }
 
   res.json({ total: tasks.length, tasks });
